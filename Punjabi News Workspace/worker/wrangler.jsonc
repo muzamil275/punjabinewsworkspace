@@ -1,0 +1,21 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "punjabi-news-workspace-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-23",
+	"workers_dev": true,
+	"vars": {
+		"FRONTEND_ORIGIN": "https://punjabi-news-workspace.vercel.app",
+		"SUPABASE_URL": "https://nkgbrynrzdlcsltymxaz.supabase.co"
+	},
+	"r2_buckets": [
+		{
+			"binding": "PAYMENT_PROOFS",
+			"bucket_name": "punjabi-news-payment-proofs"
+		}
+	],
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 0.1
+	}
+}
