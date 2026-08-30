@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Punjabi News Workspace: five essential news updates in English and Urdu.">
+  <meta name="theme-color" content="#071426">
+  <title>Punjabi News Workspace</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="#main-content" aria-label="Punjabi News Workspace home">
+      <span class="brand-mark" aria-hidden="true">PN</span>
+      <span class="brand-name">Punjabi News<br><b>Workspace</b></span>
+    </a>
+
+    <nav aria-label="Main navigation">
+      <button class="text-button active" type="button" data-view="news">Top 5</button>
+      <button class="text-button" type="button" data-action="open-subscribe">Premium</button>
+      <button class="text-button" type="button" data-action="open-support">Support</button>
+    </nav>
+
+    <div class="header-tools">
+      <button id="languageToggle" class="pill" type="button" aria-label="Switch language">
+        اردو
+      </button>
+      <button id="accountButton" class="account-button" type="button">
+        Sign in
+      </button>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-heading">
+      <p class="eyebrow" data-i18n="eyebrow">DAILY NEWS, WITHOUT THE NOISE</p>
+      <h1 id="hero-heading" data-i18n="headline">Five stories worth your time.</h1>
+      <p class="hero-copy" data-i18n="heroCopy">
+        A focused English and Urdu news brief, updated by the owner every day.
+      </p>
+
+      <div class="hero-actions">
+        <button class="primary" type="button" data-action="open-subscribe" data-i18n="premiumButton">
+          Go Premium — Rs 500/month
+        </button>
+        <span class="bonus" data-i18n="bonus">
+          First verified payment: 2 months for the price of 1
+        </span>
+      </div>
+    </section>
+
+    <section class="news-section" aria-labelledby="news-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow" data-i18n="today">TODAY'S TOP FIVE</p>
+          <h2 id="news-heading" data-i18n="topStories">Top stories</h2>
+        </div>
+        <time id="newsDate" class="date-label" datetime=""></time>
+      </div>
+
+      <div id="newsGrid" class="news-grid" aria-live="polite" aria-busy="true">
+        <article class="loading-card skeleton-card" aria-label="Loading today's brief">
+          <span></span>
+          <span></span>
+          <span></span>
+        </article>
+        <article class="loading-card skeleton-card" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </article>
+      </div>
+    </section>
+
+    <section class="premium-strip" aria-labelledby="premium-heading">
+      <div>
+        <p class="eyebrow">PREMIUM READING</p>
+        <h2 id="premium-heading">No ads. Better focus. Your preferences.</h2>
+      </div>
+      <button class="secondary" type="button" data-action="open-subscribe">
+        See Premium benefits
+      </button>
+    </section>
+
+    <section id="adminPanel" class="admin-panel hidden" aria-labelledby="admin-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">OWNER AREA</p>
+          <h2 id="admin-heading">Publish today’s five</h2>
+        </div>
+        <button id="refreshPayments" class="text-button" type="button">
+          Refresh payment queue
+        </button>
+      </div>
+
+      <div class="admin-grid">
+        <form id="newsForm" class="panel-form">
+          <h3>New bilingual news card</h3>
+
+          <div class="form-row">
+            <label>
+              Rank (1–5)
+              <input name="dailyRank" type="number" min="1" max="5" required>
+            </label>
+
+            <label>
+              Category
+              <input name="category" maxlength="40" placeholder="Pakistan" required>
+            </label>
+          </div>
+
+          <label>
+            English headline
+            <input name="titleEn" maxlength="160" required>
+          </label>
+
+          <label>
+            English summary
+            <textarea name="excerptEn" maxlength="500" required></textarea>
+          </label>
+
+          <label>
+            Urdu headline
+            <input name="titleUr" dir="rtl" lang="ur" maxlength="160" required>
+          </label>
+
+          <label>
+            Urdu summary
+            <textarea name="excerptUr" dir="rtl" lang="ur" maxlength="500" required></textarea>
+          </label>
+
+          <button class="primary" type="submit">Publish card</button>
+        </form>
+
+        <div class="payments-panel">
+          <h3>Payment verification queue</h3>
+          <div id="paymentsList" class="payments-list" aria-live="polite">
+            Sign in as the owner to view payment proofs.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="year"></span> Punjabi News Workspace</span>
+    <button class="footer-link" type="button" data-action="open-support">Contact owner</button>
+    <button class="footer-link" type="button" data-action="open-subscribe">Premium</button>
+  </footer>
+
+  <div id="modalRoot" class="modal-root hidden" aria-hidden="true"></div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
