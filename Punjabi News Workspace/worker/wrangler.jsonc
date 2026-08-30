@@ -6,7 +6,9 @@
 	"workers_dev": true,
 	"vars": {
 		"FRONTEND_ORIGIN": "https://punjabi-news-workspace.vercel.app",
-		"SUPABASE_URL": "https://nkgbrynrzdlcsltymxaz.supabase.co"
+		"SUPABASE_URL": "https://nkgbrynrzdlcsltymxaz.supabase.co",
+		"OWNER_EMAIL": "muzamil.275pk@gmail.com",
+		"OWNER_PHONE": "+923425078246"
 	},
 	"r2_buckets": [
 		{
