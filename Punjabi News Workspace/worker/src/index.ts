@@ -1,5 +1,5 @@
-interface Env { PAYMENT_PROOFS: R2Bucket; FRONTEND_ORIGIN: string; SUPABASE_URL: string; SUPABASE_ANON_KEY: string; SUPABASE_SERVICE_ROLE_KEY: string; ADMIN_USER_ID: string; TURNSTILE_SECRET?: string; }
-type User = { id: string; email?: string; user_metadata?: { display_name?: string } };
+interface Env { PAYMENT_PROOFS: R2Bucket; FRONTEND_ORIGIN: string; SUPABASE_URL: string; SUPABASE_ANON_KEY: string; SUPABASE_SERVICE_ROLE_KEY: string; ADMIN_USER_ID?: string; OWNER_EMAIL?: string; OWNER_PHONE?: string; TURNSTILE_SECRET?: string; }
+type User = { id: string; email?: string; phone?: string; user_metadata?: { display_name?: string } };
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...headers } });
 const error = (message: string, status = 400, headers: Record<string, string> = {}) => json({ error: message }, status, headers);
 const allowedMethods = "GET,POST,PATCH,OPTIONS";
@@ -9,7 +9,8 @@ async function supabase(env: Env, path: string, init: RequestInit = {}) { const 
 async function getUser(request: Request, env: Env): Promise<User | null> { const authorization = request.headers.get("authorization"); if (!authorization?.startsWith("Bearer ")) return null; const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers: { apikey: env.SUPABASE_ANON_KEY, authorization } }); return response.ok ? response.json() as Promise<User> : null; }
 async function requireUser(request: Request, env: Env, headers: Record<string, string>) { const user = await getUser(request, env); return user || error("Please sign in first.", 401, headers); }
 function isResponse(value: unknown): value is Response { return value instanceof Response; }
-function isAdmin(user: User, env: Env) { return user.id === env.ADMIN_USER_ID; }
+function normalizePhone(value: string | undefined) { return (value || "").replace(/[^0-9+]/g, "").replace(/^00/, "+"); }
+function isAdmin(user: User, env: Env) { const emailMatch = Boolean(env.OWNER_EMAIL && user.email && user.email.trim().toLowerCase() === env.OWNER_EMAIL.trim().toLowerCase()); const phoneMatch = Boolean(env.OWNER_PHONE && user.phone && normalizePhone(user.phone) === normalizePhone(env.OWNER_PHONE)); const idMatch = Boolean(env.ADMIN_USER_ID && user.id === env.ADMIN_USER_ID); return idMatch || emailMatch || phoneMatch; }
 async function verifyTurnstile(token: FormDataEntryValue | null, request: Request, env: Env) { if (!env.TURNSTILE_SECRET) return true; if (typeof token !== "string" || !token) return false; const form = new FormData(); form.set("secret", env.TURNSTILE_SECRET); form.set("response", token); form.set("remoteip", request.headers.get("cf-connecting-ip") || ""); const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form }); const result = await response.json() as { success?: boolean }; return result.success === true; }
 function extFor(file: File) { return file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : file.type === "application/pdf" ? "pdf" : ""; }
 function karachiDate() { const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()); const pick = (type: string) => parts.find((part) => part.type === type)?.value || ""; return `${pick("year")}-${pick("month")}-${pick("day")}`; }
@@ -21,9 +22,12 @@ async function publicNews(url: URL, env: Env, headers: Record<string, string>) {
 }
 async function me(request: Request, env: Env, headers: Record<string, string>) {
   const user = await requireUser(request, env, headers); if (isResponse(user)) return user;
+  const owner = isAdmin(user, env);
   const response = await supabase(env, `subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=plan,status,access_ends_at&limit=1`); const subscriptions = response.ok ? await response.json() as Array<{ plan: string; status: string; access_ends_at: string }> : [];
-  const subscription = subscriptions[0]; const active = Boolean(subscription && new Date(subscription.access_ends_at).getTime() > Date.now() && ["provisional", "active"].includes(subscription.status));
-  return json({ user: { id: user.id, email: user.email, isAdmin: isAdmin(user, env) }, subscription: subscription ? { ...subscription, active } : null }, 200, headers);
+  const subscription = subscriptions[0];
+  const active = owner || Boolean(subscription && new Date(subscription.access_ends_at).getTime() > Date.now() && ["provisional", "active"].includes(subscription.status));
+  const ownerSubscription = owner && !subscription ? { plan: "premium", status: "active", access_ends_at: "2099-12-31T23:59:59.999Z" } : subscription;
+  return json({ user: { id: user.id, email: user.email, phone: user.phone, isAdmin: owner }, subscription: ownerSubscription ? { ...ownerSubscription, active } : null }, 200, headers);
 }
 async function createPayment(request: Request, env: Env, headers: Record<string, string>) {
   const user = await requireUser(request, env, headers); if (isResponse(user)) return user;
