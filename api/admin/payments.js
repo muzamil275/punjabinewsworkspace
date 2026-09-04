@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
   try {
     const user = await requireUser(req, res); if (!user) return;
     if (!isOwner(user)) return json(res, { error: 'Owner access required.' }, 403);
-    const r = await supabaseFetch('payments?status=eq.pending&select=id,user_id,method,transaction_id,amount,status,created_at&order=created_at.asc');
+    const r = await supabaseFetch('payments?status=eq.pending&select=id,user_id,method,transaction_id,amount,status,created_at&order=created_at.asc', { authHeader: req.headers.authorization || '' });
     const data = await dbJson(r);
     if (!r.ok) return json(res, { error: 'Payment queue unavailable.' }, 503);
     return json(res, { payments: data });
