@@ -1,2 +1,31 @@
-const { json, cors, requireUser, isOwner, supabaseFetch } = require('../../lib/api');
-module.exports = async (req, res) => { cors(req, res); if (req.method === 'OPTIONS') return res.status(204).end(); if (req.method !== 'POST') return json(res, { error: 'Method not allowed.' }, 405); try { const user = await requireUser(req, res); if (!user) return; if (!isOwner(user)) return json(res, { error: 'Owner access required.' }, 403); const body = req.body || {}; const category = String(body.category || '').trim(), titleEn = String(body.titleEn || '').trim(), titleUr = String(body.titleUr || '').trim(), excerptEn = String(body.excerptEn || '').trim(), excerptUr = String(body.excerptUr || '').trim(), rank = Number(body.dailyRank); if (!category || category.length > 40 || !titleEn || titleEn.length > 160 || !titleUr || titleUr.length > 160 || !excerptEn || excerptEn.length > 500 || !excerptUr || excerptUr.length > 500 || !Number.isInteger(rank) || rank < 1 || rank > 5) return json(res, { error: 'Complete every bilingual news field and use a rank from 1 to 5.' }, 422); const r = await supabaseFetch('news_posts', { method: 'POST', authHeader: req.headers.authorization || '', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ category, title_en: titleEn, title_ur: titleUr, excerpt_en: excerptEn, excerpt_ur: excerptUr, daily_rank: rank, published_on: new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Karachi',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()), is_published: true, published_by: user.id }) }); if (!r.ok) return json(res, { error: 'That rank is already used today, or publishing failed.' }, 409); return json(res, { ok: true }, 201); } catch (e) { return json(res, { error: e.message || 'Publishing failed.' }, 500); } };
+const { json, cors, requireUser, isOwner, supabaseFetch, dbJson, karachiDate, safeText, safeUrl } = require('../../lib/api');
+const auth = req => ({ authHeader: req.headers.authorization || '' });
+function fields(body) { return { category: safeText(body.category, 40), titleEn: safeText(body.titleEn, 160), titleUr: safeText(body.titleUr, 160), excerptEn: safeText(body.excerptEn, 500), excerptUr: safeText(body.excerptUr, 500), imageUrl: body.imageUrl ? safeUrl(body.imageUrl) : null, sourceName: body.sourceName ? safeText(body.sourceName, 80) : null, sourceUrl: body.sourceUrl ? safeUrl(body.sourceUrl) : null, rank: Number(body.dailyRank) }; }
+function valid(f) { return f.category && f.titleEn && f.titleUr && f.excerptEn && f.excerptUr && Number.isInteger(f.rank) && f.rank >= 1 && f.rank <= 5 && (f.imageUrl !== null || !String(f.imageUrl || '')) && (f.sourceUrl !== null || !String(f.sourceUrl || '')); }
+module.exports = async (req, res) => {
+  cors(req, res); if (req.method === 'OPTIONS') return res.status(204).end();
+  try {
+    const user = await requireUser(req, res); if (!user) return; if (!isOwner(user)) return json(res, { error: 'Owner access required.' }, 403);
+    const authHeader = req.headers.authorization || '';
+    if (req.method === 'GET') {
+      const r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(karachiDate())}&select=id,category,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on,daily_rank,updated_at&order=daily_rank.asc`, { authHeader });
+      const data = await dbJson(r); return r.ok ? json(res, { posts: Array.isArray(data) ? data : [] }) : json(res, { error: 'Owner news list unavailable.' }, 503);
+    }
+    const id = String(req.query?.id || '');
+    if (req.method === 'POST') {
+      const f = fields(req.body || {}); if (!valid(f)) return json(res, { error: 'Complete the bilingual fields and use a rank from 1 to 5. URLs must be HTTPS.' }, 422);
+      const r = await supabaseFetch('news_posts', { method: 'POST', authHeader, headers: { Prefer: 'return=representation' }, body: JSON.stringify({ category:f.category,title_en:f.titleEn,title_ur:f.titleUr,excerpt_en:f.excerptEn,excerpt_ur:f.excerptUr,image_url:f.imageUrl,source_name:f.sourceName,source_url:f.sourceUrl,daily_rank:f.rank,published_on:karachiDate(),is_published:true,published_by:user.id }) });
+      if (!r.ok) return json(res, { error: 'That rank is already used today, or publishing failed.' }, 409); return json(res, { ok: true }, 201);
+    }
+    if (!/^\d+$/.test(id)) return json(res, { error: 'A valid news ID is required.' }, 422);
+    if (req.method === 'PATCH') {
+      const f = fields(req.body || {}); if (!valid(f)) return json(res, { error: 'Complete the bilingual fields and use a rank from 1 to 5. URLs must be HTTPS.' }, 422);
+      const r = await supabaseFetch(`news_posts?id=eq.${encodeURIComponent(id)}&published_on=eq.${encodeURIComponent(karachiDate())}`, { method: 'PATCH', authHeader, headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ category:f.category,title_en:f.titleEn,title_ur:f.titleUr,excerpt_en:f.excerptEn,excerpt_ur:f.excerptUr,image_url:f.imageUrl,source_name:f.sourceName,source_url:f.sourceUrl,daily_rank:f.rank,updated_at:new Date().toISOString() }) });
+      if (!r.ok) return json(res, { error: 'News update failed. The rank may already be in use.' }, 409); return json(res, { ok: true });
+    }
+    if (req.method === 'DELETE') {
+      const r = await supabaseFetch(`news_posts?id=eq.${encodeURIComponent(id)}&published_on=eq.${encodeURIComponent(karachiDate())}`, { method:'DELETE', authHeader, headers:{Prefer:'return=minimal'} }); if (!r.ok) return json(res, { error:'News deletion failed.' }, 503); return json(res,{ok:true});
+    }
+    return json(res, { error: 'Method not allowed.' }, 405);
+  } catch (e) { return json(res, { error: e.message || 'News administration failed.' }, 500); }
+};
