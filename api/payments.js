@@ -1,4 +1,36 @@
 const { json, cors, requireUser, supabaseFetch, dbJson, parseRequestBody, ensureBucket, uploadProof, deleteProof, randomName } = require('../lib/api');
 function extFor(type) { return type === 'image/jpeg' ? 'jpg' : type === 'image/png' ? 'png' : type === 'application/pdf' ? 'pdf' : ''; }
-module.exports = async (req, res) => { cors(req, res); if (req.method === 'OPTIONS') return res.status(204).end(); if (req.method !== 'POST') return json(res, { error: 'Method not allowed.' }, 405); try { const user = await requireUser(req, res); if (!user) return; const { fields, files } = await parseRequestBody(req); const method = fields.method; const transactionId = String(fields.transactionId || '').trim(); const file = files.find(f => f.name === 'proof'); const ext = extFor(file?.contentType); if (!['easypaisa','ubl'].includes(method) || !/^[A-Za-z0-9-]{6,80}$/.test(transactionId) || !file || file.data.length > 5 * 1024 * 1024 || !ext) return json(res, { error: 'Use a valid transaction ID and a JPG, PNG, or PDF proof under 5 MB.' }, 422); const existing = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=access_ends_at,status&limit=1`); const current = existing.ok ? (await dbJson(existing))[0] : null; if (current && new Date(current.access_ends_at).getTime() > Date.now() && ['provisional','active'].includes(current.status)) return json(res, { error: 'Your Premium access is already active.' }, 409); const queue = await supabaseFetch(`payment_submissions?user_id=eq.${encodeURIComponent(user.id)}&status=eq.provisional&select=id&limit=1`); if (queue.ok && (await dbJson(queue)).length) return json(res, { error: 'You already have a proof awaiting owner verification.' }, 409); await ensureBucket(); const objectKey = `${user.id}/${randomName(ext)}`; await uploadProof(objectKey, file); const profileResult = await supabaseFetch(`profiles?id=eq.${encodeURIComponent(user.id)}&select=first_payment_bonus_used&limit=1`); const profile = profileResult.ok ? (await dbJson(profileResult))[0] : null; const months = profile?.first_payment_bonus_used ? 1 : 2; const ends = new Date(); ends.setMonth(ends.getMonth() + months); const payment = await supabaseFetch('payment_submissions', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ user_id: user.id, payment_method: method, transaction_id: transactionId, receipt_object_key: objectKey, amount_pkr: 500, status: 'provisional', provisional_ends_at: ends.toISOString() }) }); if (!payment.ok) { await deleteProof(objectKey); return json(res, { error: 'Could not save payment proof. Please try again.' }, 503); } const subscription = await supabaseFetch('subscriptions?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify({ user_id: user.id, plan: 'premium', status: 'provisional', access_ends_at: ends.toISOString() }) }); if (!subscription.ok) return json(res, { error: 'Proof saved, but Premium activation failed. Please contact support.' }, 503); return json(res, { message: `Premium is active provisionally until ${ends.toLocaleDateString('en-PK')}. The owner will verify your payment.` }, 201); } catch (e) { return json(res, { error: e.message || 'Payment submission failed.' }, 500); } };
+module.exports = async (req, res) => {
+  cors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return json(res, { error: 'Method not allowed.' }, 405);
+  try {
+    const user = await requireUser(req, res); if (!user) return;
+    const { fields, files } = await parseRequestBody(req);
+    const method = String(fields.method || '');
+    const transactionId = String(fields.transactionId || '').trim();
+    const file = files.find(f => f.name === 'proof');
+    const ext = extFor(file?.contentType);
+    if (!['easypaisa','ubl'].includes(method) || !/^[A-Za-z0-9-]{6,80}$/.test(transactionId) || !file || file.data.length > 5 * 1024 * 1024 || !ext) return json(res, { error: 'Use a valid transaction ID and a JPG, PNG, or PDF proof under 5 MB.' }, 422);
+
+    const active = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&access_ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`);
+    if (active.ok && (await dbJson(active)).length) return json(res, { error: 'Your Premium access is already active.' }, 409);
+    const pending = await supabaseFetch(`payments?user_id=eq.${encodeURIComponent(user.id)}&status=eq.pending&select=id&limit=1`);
+    if (pending.ok && (await dbJson(pending)).length) return json(res, { error: 'You already have a payment awaiting owner verification.' }, 409);
+
+    await ensureBucket();
+    const objectKey = `${user.id}/${randomName(ext)}`;
+    await uploadProof(objectKey, file);
+    const payment = await supabaseFetch('payments', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ user_id: user.id, method, transaction_id: transactionId, proof_path: objectKey, amount: 500, status: 'pending' }) });
+    if (!payment.ok) { await deleteProof(objectKey); return json(res, { error: 'Could not save payment proof. Please try again.' }, 503); }
+    const existingSub = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=id&limit=1`);
+    const subRows = existingSub.ok ? await dbJson(existingSub) : [];
+    if (subRows.length) {
+      await supabaseFetch(`subscriptions?id=eq.${encodeURIComponent(subRows[0].id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ plan: 'premium', status: 'pending', access_ends_at: null, updated_at: new Date().toISOString() }) });
+    } else {
+      await supabaseFetch('subscriptions', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ user_id: user.id, plan: 'premium', status: 'pending', access_ends_at: null }) });
+    }
+    return json(res, { message: 'Payment proof submitted. Premium will be activated after owner verification.' }, 201);
+  } catch (e) { return json(res, { error: e.message || 'Payment submission failed.' }, 500); }
+};
 module.exports.config = { api: { bodyParser: false } };
