@@ -1,5 +1,5 @@
-const CACHE_NAME='pnw-static-v4';
-const APP_SHELL=['/','/index.html','/styles.css','/enhancements.css','/mobile-fixes.css?v=20260906b','/config.js?v=20260906','/otp-session-upgrade.js?v=20260906b','/app.js?v=20260906','/history.js?v=20260906','/premium-motion.js?v=20260906','/urdu-ui.js?v=20260906','/manifest.webmanifest','/favicon.svg'];
+const CACHE_NAME='pnw-static-v5';
+const APP_SHELL=['/','/index.html','/styles.css','/enhancements.css','/mobile-fixes.css?v=20260906b','/config.js?v=20260906','/otp-session-upgrade.js?v=20260906c','/app.js?v=20260906','/history.js?v=20260906','/premium-motion.js?v=20260906','/urdu-ui.js?v=20260906','/manifest.webmanifest','/favicon.svg'];
 const STATIC_EXT=/\.(?:css|js|svg|png|jpg|jpeg|webp|ico|webmanifest)$/i;
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
