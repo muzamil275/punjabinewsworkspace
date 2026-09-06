@@ -24,5 +24,11 @@ body.modal-open{overflow:hidden;}
   #modalRoot .modal{width:min(100%,560px);max-height:calc(100dvh - 20px);padding:52px 20px max(24px,env(safe-area-inset-bottom));}
   #modalRoot .close{top:8px;right:8px;width:50px;height:50px;min-width:50px;min-height:50px;font-size:1.8rem;}
 }
-@supports not (height:100dvh){#modalRoot .modal{max-height:calc(100vh - 24px);}@media (max-width:700px){#modalRoot .modal{max-height:calc(100vh - 20px);}}}
-@media (prefers-reduced-motion:reduce){.news-card{animation:none!important;#modalRoot .close{transition:none!important;transform:none!important}}}
+@supports not (height:100dvh){
+  #modalRoot .modal{max-height:calc(100vh - 24px);}
+  @media (max-width:700px){#modalRoot .modal{max-height:calc(100vh - 20px);}}
+}
+@media (prefers-reduced-motion:reduce){
+  .news-card{animation:none!important;}
+  #modalRoot .close{transition:none!important;}
+}
