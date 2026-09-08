@@ -107,6 +107,15 @@
     }catch{}
   }
 
+  function scrollToNews(){
+    const basicButton = qs('.mode-switch [data-mode="basic"]');
+    if(document.body?.dataset.mode !== 'basic') basicButton?.click();
+    setTimeout(() => {
+      const target = qs('#today-heading') || qs('#newsGrid');
+      target?.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 80);
+  }
+
   function openOverlay(kind){
     const root = qs('#modalRoot'); if(!root) return; const premium = kind === 'premium';
     root.innerHTML = `<div class="modal workspace-overlay" role="dialog" aria-modal="true" aria-labelledby="workspace-overlay-title"><button class="close" type="button" aria-label="Close">×</button><span class="auth-premium-kicker">${premium?'PREMIUM PREVIEW':'SUPPORT'}</span><h2 id="workspace-overlay-title">${premium?'See what Premium adds.':'Need help? We’re here.'}</h2>${premium?`<p class="overlay-lead">A richer reading workspace without changing the simple Basic briefing.</p><div class="preview-feature-grid"><div><b>Deep brief</b><span>More context around each daily story.</span></div><div><b>Source context</b><span>Cleaner source details and easier reading.</span></div><div><b>Priority layout</b><span>A focused Premium workspace for deeper reading.</span></div></div><button class="primary" type="button" data-overlay-subscribe>Open Premium</button>`:`<p class="overlay-lead">For Premium, account, payment, news or website issues, contact us directly.</p><div class="support-contact"><b>Email support</b><a href="mailto:${EMAIL}">${EMAIL}</a><button class="secondary" type="button" data-copy-email>Copy email</button></div>`}</div>`;
@@ -119,6 +128,8 @@
 
   function bind(){
     document.addEventListener('click', e=>{
+      const today = e.target.closest('.main-nav a[href="#newsGrid"]');
+      if(today){e.preventDefault();scrollToNews();return;}
       const support=e.target.closest('[data-action="open-support"]'); if(support){e.preventDefault();openOverlay('support');return;}
       const preview=e.target.closest('#premium-anchor .primary'); if(preview){e.preventDefault();openOverlay('premium');return;}
     });
