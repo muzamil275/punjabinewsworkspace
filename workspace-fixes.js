@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const EMAIL = 'muzamil.275pk@gmail.com';
+  const FALLBACK_IMAGE = '/news-images/fallback.svg';
   const esc = v => String(v ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
   const qs = s => document.querySelector(s);
   const lang = () => localStorage.getItem('pnw_language') || 'en';
@@ -27,7 +28,8 @@
     const ur = isUrdu();
     const title = ur ? p.title_ur : p.title_en;
     const text = ur ? p.excerpt_ur : p.excerpt_en;
-    const img = p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : '';
+    const src = p.image_url || FALLBACK_IMAGE;
+    const img = `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">`;
     const source = p.source_url && p.source_name ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>` : esc(p.source_name || '');
     return `<article class="news-card workspace-card" data-history-title="${esc(title)}">${img}<div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(fmtDate(p.published_on))}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div></article>`;
   }
