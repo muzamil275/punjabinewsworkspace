@@ -54,7 +54,15 @@ module.exports = async (req, res) => {
       response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: instruction }] }] }),
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: instruction }] }],
+          generationConfig: {
+            thinkingConfig: {
+              thinkingLevel: 'low',
+              includeThoughts: false
+            }
+          }
+        }),
         signal: controller.signal
       });
     } catch (error) {
