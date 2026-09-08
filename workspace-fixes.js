@@ -126,8 +126,12 @@
     qs('#geminiClear')?.addEventListener('click', resetGemini);
     document.addEventListener('pnw:language-changed', ()=>setTimeout(initEditions,100));
     document.addEventListener('pnw:premium-render', syncPremiumEdition);
+    let previousMode = document.body?.dataset.mode || 'basic';
     const observer = new MutationObserver(() => {
-      if(document.body?.dataset.mode==='premium') syncPremiumEdition();
+      const mode = document.body?.dataset.mode || 'basic';
+      if(mode !== previousMode && mode === 'premium') resetGemini();
+      previousMode = mode;
+      if(mode === 'premium') syncPremiumEdition();
     });
     observer.observe(document.body,{attributes:true,attributeFilter:['data-mode']});
   }
