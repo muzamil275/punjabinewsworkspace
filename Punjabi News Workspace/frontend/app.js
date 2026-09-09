@@ -25,7 +25,12 @@
     const grid = $("#newsGrid"); grid.innerHTML = '<div class="loading-card">Loading today’s brief…</div>';
     try {
       const data = await api(`/news?lang=${state.language}`); const posts = data.posts || [];
-      $("#newsDate").textContent = new Intl.DateTimeFormat(state.language === "ur" ? "ur-PK" : "en-PK", { dateStyle: "medium" }).format(new Date());
+      const effectiveDate = data.date || data.requestedDate;
+      const dateEl = $("#newsDate");
+      if (dateEl && effectiveDate) {
+        dateEl.textContent = new Intl.DateTimeFormat(state.language === "ur" ? "ur-PK" : "en-PK", { dateStyle: "medium" }).format(new Date(`${effectiveDate}T12:00:00`));
+        dateEl.setAttribute("datetime", effectiveDate);
+      }
       grid.innerHTML = posts.length ? posts.map((post, index) => `<article class="news-card"><span class="rank">0${index + 1}</span><span class="category">${escape(post.category)}</span><h3${state.language === "ur" ? ' dir="rtl" lang="ur"' : ""}>${escape(state.language === "ur" ? post.title_ur : post.title_en)}</h3><p${state.language === "ur" ? ' dir="rtl" lang="ur"' : ""}>${escape(state.language === "ur" ? post.excerpt_ur : post.excerpt_en)}</p></article>`).join("") : '<div class="loading-card">The owner has not published today’s five stories yet.</div>';
     } catch (error) { grid.innerHTML = `<div class="loading-card error">${escape(error.message)} Please check the deployment settings.</div>`; }
   }
