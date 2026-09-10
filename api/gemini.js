@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
     try {
       response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`, {
         method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-        body:JSON.stringify({contents:[{role:'user',parts:[{text:instruction}]}],generationConfig:{thinkingConfig:{thinkingLevel:'minimal',includeThoughts:false}}}), signal:controller.signal
+        body:JSON.stringify({contents:[{role:'user',parts:[{text:instruction}]}],generationConfig:{thinkingConfig:{includeThoughts:false}}}), signal:controller.signal
       });
     } catch(error) {
       if(error?.name==='AbortError') return json(res,{error:'Gemini took too long to respond. Please try again.'},504);
