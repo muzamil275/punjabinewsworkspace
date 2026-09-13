@@ -9,13 +9,11 @@ function installPremiumFixes() {
   const style = document.createElement('style');
   style.id = 'pnw-premium-mobile-fixes';
   style.textContent = `
-    #premiumMode .premium-news-pager{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin:28px auto 12px;position:relative;z-index:4;padding:4px 0;max-width:100%;}
-    #premiumMode .premium-news-pager .news-page{min-width:52px;min-height:42px;padding:6px 9px;border:1px solid var(--premium-line);border-radius:9px;background:var(--premium-surface);color:var(--premium-muted);font:800 .76rem/1.1 inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .18s,border-color .18s,color .18s,background .18s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
-    #premiumMode .premium-news-pager .news-page span{display:block;font-weight:900;line-height:1;}
-    #premiumMode .premium-news-pager .news-page small{display:block;font-size:.62rem;line-height:1;color:var(--premium-muted);white-space:nowrap;}
-    #premiumMode .premium-news-pager .news-page:hover,#premiumMode .premium-news-pager .news-page:focus-visible{transform:translateY(-2px);border-color:#40556d;color:var(--premium-text);background:var(--premium-surface-2);outline:none;}
-    #premiumMode .premium-news-pager .news-page.active{border-color:var(--premium-mango);color:#111;background:var(--premium-mango);}
-    #premiumMode .premium-news-pager .news-page.active small{color:#111;}
+    /* Premium uses the same edition pager structure as Basic, but keeps the number/date stacked cleanly. */
+    #premiumMode .premium-news-pager{position:relative;z-index:4;width:100%;max-width:100%;}
+    #premiumMode .premium-news-pager .news-page{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:52px;min-height:42px;white-space:normal;}
+    #premiumMode .premium-news-pager .news-page span{display:block;line-height:1;font-weight:900;}
+    #premiumMode .premium-news-pager .news-page small{display:block;line-height:1.05;font-size:.62rem;white-space:nowrap;}
     body[data-mode="premium"] .premium-mode .premium-card h3,
     body[data-mode="premium"] .premium-mode .premium-card p,
     body[data-mode="premium"] .premium-mode .premium-card .card-meta,
@@ -75,7 +73,7 @@ function renderPremiumCards(posts, lang) {
       ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>`
       : (p.source_name ? esc(p.source_name) : '');
     const image = p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async">` : '';
-    return `<article class="news-card premium-card">${image}<div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${formatDate(p.updated_at || p.published_on, lang)}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div><span class="premium-tag">Premium mode</span></article>`;
+    return `<article class="news-card premium-card">${image}<div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${formatDate(p.published_on || p.updated_at, lang)}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div><span class="premium-tag">Premium mode</span></article>`;
   }).join('');
 }
 
@@ -107,13 +105,16 @@ function syncPremiumPager(availableDates, activeDate) {
   if (!pager) {
     pager = document.createElement('nav');
     pager.id = 'premiumNewsPager';
-    pager.className = 'premium-news-pager';
-    pager.setAttribute('aria-label', 'Premium news editions');
-    grid.parentNode.insertBefore(pager, grid);
+    pager.className = 'news-pager premium-news-pager';
+    pager.setAttribute('aria-label', 'News editions');
+    grid.parentNode.appendChild(pager);
+  } else if (pager.parentNode !== grid.parentNode || pager.previousElementSibling !== grid) {
+    grid.parentNode.appendChild(pager);
   }
-  const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))].slice(0, 5);
-  if (!dates.length) return;
-  pager.innerHTML = dates.map((date, i) => `<button class="news-page${date === activeDate ? ' active' : ''}" type="button" data-premium-date="${esc(date)}" aria-label="Edition ${i + 1}, ${esc(formatDate(date, document.documentElement.lang))}" aria-current="${date === activeDate ? 'page' : 'false'}"><span>${i + 1}</span><small>${esc(formatDate(date, document.documentElement.lang))}</small></button>`).join('');
+  const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))].slice(0, 12);
+  if (!dates.length) { pager.innerHTML = ''; return; }
+  const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
+  pager.innerHTML = dates.map((date, i) => `<button type="button" class="news-page${date === activeDate ? ' active' : ''}" data-premium-date="${esc(date)}" aria-label="News edition ${i + 1}, ${esc(formatDate(date, lang))}" aria-current="${date === activeDate ? 'page' : 'false'}"><span>${i + 1}</span><small>${esc(formatDate(date, lang))}</small></button>`).join('');
   pager.querySelectorAll('[data-premium-date]').forEach(btn => btn.addEventListener('click', () => loadPremiumEdition(btn.dataset.premiumDate)));
 }
 
