@@ -1,22 +1,45 @@
 const { json, cors, supabaseFetch, dbJson, karachiDate } = require('../lib/api');
 
-const FALLBACK_IMAGES = {
-  sport: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=1200&q=80',
-  rain: 'https://humenglish341f88e60e.blob.core.windows.net/humenglish/uploads/2026/04/rain.png',
-  fuel: 'https://www.inp.net.pk/images/20240423125921_ogImage_1.jpg',
-  balochistan: 'https://upload.wikimedia.org/wikipedia/commons/d/d2/Winding_road_in_Balochistan_%28Pakistan%29_%283964474957%29.jpg'
+const LOCAL_IMAGES = {
+  fallback: '/news-images/fallback.svg',
+  sport: '/news-images/cricket.svg',
+  rain: '/news-images/fallback.svg',
+  fuel: '/news-images/fuel-prices-20260910.svg',
+  oil: '/news-images/oil-prices-20260911.svg',
+  balochistan: '/news-images/balochistan-security-20260909.svg',
+  airport: '/news-images/airport.svg',
+  aviation: '/news-images/airport.svg',
+  iran: '/news-images/iran-gulf.svg',
+  gulf: '/news-images/iran-gulf.svg',
+  shipping: '/news-images/hormuz-shipping-20260911.svg',
+  gwadar: '/news-images/gwadar-sohar-20260908.svg',
+  paf: '/news-images/paf-day-20260907.svg',
+  england: '/news-images/england-pakistan-20260912.svg',
+  cricket: '/news-images/cricket.svg'
 };
 
-function addFallbackImages(posts) {
-  return (Array.isArray(posts) ? posts : []).map(post => {
-    if (post.image_url) return post;
-    const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.category || ''}`.toLowerCase();
-    let image_url = FALLBACK_IMAGES.sport;
-    if (/rain|weather|monsoon|بارش|موسم/.test(text)) image_url = FALLBACK_IMAGES.rain;
-    else if (/petrol|diesel|fuel|oil|business|پٹرول|ڈیزل/.test(text)) image_url = FALLBACK_IMAGES.fuel;
-    else if (/balochistan|بلوچستان/.test(text)) image_url = FALLBACK_IMAGES.balochistan;
-    return { ...post, image_url };
-  });
+function pickLocalImage(post) {
+  const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.excerpt_en || ''} ${post.category || ''}`.toLowerCase();
+  if (/balochistan|بلوچستان/.test(text)) return LOCAL_IMAGES.balochistan;
+  if (/rain|weather|monsoon|بارش|موسم/.test(text)) return LOCAL_IMAGES.rain;
+  if (/petrol|diesel|fuel|oil prices|پٹرول|ڈیزل|تیل/.test(text)) return /oil prices|تیل/.test(text) ? LOCAL_IMAGES.oil : LOCAL_IMAGES.fuel;
+  if (/hormuz|shipping|ship|maritime|بحری|شپنگ/.test(text)) return LOCAL_IMAGES.shipping;
+  if (/gwadar|sohar|گوادر/.test(text)) return LOCAL_IMAGES.gwadar;
+  if (/iran|gulf|ایران|خلیج/.test(text)) return LOCAL_IMAGES.iran;
+  if (/airport|aviation|flight|airline|ہوائی اڈ|پرواز/.test(text)) return LOCAL_IMAGES.airport;
+  if (/paf|air force|فضائیہ/.test(text)) return LOCAL_IMAGES.paf;
+  if (/england|pakistan.*test|پاکستان.*انگلینڈ/.test(text)) return LOCAL_IMAGES.england;
+  if (/sport|cricket|match|کھیل|کرکٹ|میچ/.test(text)) return LOCAL_IMAGES.cricket;
+  return LOCAL_IMAGES.fallback;
+}
+
+function normalizeImages(posts) {
+  return (Array.isArray(posts) ? posts : []).map(post => ({
+    ...post,
+    image_url: typeof post.image_url === 'string' && post.image_url.startsWith('/')
+      ? post.image_url
+      : pickLocalImage(post)
+  }));
 }
 
 module.exports = async (req, res) => {
@@ -60,7 +83,7 @@ module.exports = async (req, res) => {
       : [];
 
     return json(res, {
-      posts: addFallbackImages(data),
+      posts: normalizeImages(data),
       date: effectiveDate,
       requestedDate: targetDate,
       isLatestAvailable: effectiveDate !== targetDate,
