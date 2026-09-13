@@ -1,7 +1,7 @@
 /* Mobile news layout fix: force a single readable column and prevent card overlap/overflow. */
 @media (max-width:700px){
 .news-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0;width:100%;min-width:0;overflow:visible}
-.news-card,.news-card:nth-child(1),.news-card:nth-child(2),.news-card:nth-child(3),.news-card:nth-child(4),.news-card:nth-child(5){grid-column:1 / -1;width:100%;min-width:0;min-height:0;height:auto;margin:0;padding:24px 20px;position:relative;overflow:hidden;transform:none}
+.news-card,.news-card:nth-child(1),.news-card:nth-child(2),.news-card:nth-child(3),.news-card:nth-child(4),.news-card:nth-child(5){grid-column:1 / -1;width:100%;min-width:0;min-height:0;height:auto;margin:0;padding:24px 20px;position:relative;overflow:hidden}
 .news-card + .news-card{border-top:0}
 .news-card img,.news-card:nth-child(1) img,.news-card:nth-child(2) img{width:calc(100% + 40px);max-width:none;height:auto;aspect-ratio:16 / 9;margin:-24px -20px 20px;object-fit:cover}
 .news-card h3,.news-card:nth-child(1) h3,.news-card:nth-child(2) h3{font-size:clamp(1.55rem,7.2vw,2.15rem);line-height:1.05;margin:16px 0 10px;overflow-wrap:anywhere}
@@ -18,9 +18,9 @@ html,body{max-width:100%;overflow-x:clip}main,header,footer,section,article,.pre
 @media (max-width:700px){
 .site-header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:var(--paper)!important}
 main{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}.section-heading{align-items:flex-start;flex-wrap:wrap}.hero-actions,.header-tools,.main-nav{min-width:0}.main-nav a,.main-nav button,.mode-pill,.pill,.account-button,.primary,.secondary{min-height:44px}
-.news-grid,.news-card,.news-card img{animation:none!important;transition:none!important;filter:none!important}.news-card{transform:none!important;box-shadow:none!important;background:var(--card)!important}.news-card img{display:block;width:calc(100% + 40px);max-width:none;height:auto;aspect-ratio:16/9;object-fit:cover}.news-grid{contain:layout paint}.news-card h3,.news-card p,.card-meta{position:relative;z-index:1}.premium-strip:after{display:none!important}
-/* Premium mobile safety: disable costly animated glow/blur effects while preserving the design. */
-.premium-mode,.premium-mode:before,.premium-mode:after,.premium-hero,.premium-toolbar,.premium-toolbar span:after,.premium-card,.premium-card:after,.premium-mode .muted,.premium-mode .premium-gate,body[data-mode=premium] .site-header:after{animation:none!important;filter:none!important;transition:none!important}.premium-mode:before,.premium-mode:after{display:none!important}.premium-card{transform:none!important;box-shadow:none!important}.premium-card:hover{transform:none!important}.premium-card img{filter:none!important;transform:none!important}.premium-hero h2{animation:none!important;background:none!important;-webkit-text-fill-color:currentColor}.premium-toolbar span:after{display:none!important}
+.news-grid,.news-card,.news-card img{filter:none!important}.news-card{background:var(--card)!important}.news-card img{display:block;width:calc(100% + 40px);max-width:none;height:auto;aspect-ratio:16/9;object-fit:cover}.news-grid{contain:layout paint}.news-card h3,.news-card p,.card-meta{position:relative;z-index:1}.premium-strip:after{display:none!important}
+/* Keep the full Premium motion system on mobile. Only layout/overflow safety is handled here. */
+.premium-mode{overflow-x:clip!important;overscroll-behavior-x:none}.premium-card img{max-width:none}
 }
 @media (max-width:360px){body{min-width:0}.site-header{gap:10px;padding-top:max(10px,env(safe-area-inset-top))}.brand{min-width:0}.brand-logo{max-width:38px}.main-nav{gap:5px}.main-nav a,.main-nav button{padding-left:5px;padding-right:5px;font-size:.78rem}.header-tools{gap:5px}.mode-pill{padding-left:7px;padding-right:7px}.pill,.account-button{padding-left:9px;padding-right:9px}.hero h1{overflow-wrap:anywhere}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
