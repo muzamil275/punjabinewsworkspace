@@ -32,3 +32,30 @@ body.modal-open{overflow:hidden;}
   .news-card{animation:none!important;}
   #modalRoot .close{transition:none!important;}
 }
+
+/* Cross-device hardening: prevent viewport overflow, protect grid/flex children, and keep controls usable. */
+html,body{max-width:100%;overflow-x:clip;}
+main,header,footer,section,article,.premium-mode,.premium-grid,.news-grid,.gemini-workspace{min-width:0;max-width:100%;}
+img,video,svg,canvas{max-width:100%;}
+button,input,textarea,select{max-width:100%;}
+button,a,input,textarea,select{touch-action:manipulation;}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 70%,white);outline-offset:3px;}
+@media (max-width:700px){
+  .site-header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));}
+  main{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));}
+  .section-heading{align-items:flex-start;flex-wrap:wrap;}
+  .hero-actions,.header-tools,.main-nav{min-width:0;}
+  .main-nav a,.main-nav button,.mode-pill,.pill,.account-button,.primary,.secondary{min-height:44px;}
+}
+@media (max-width:360px){
+  body{min-width:0;}
+  .site-header{gap:10px;padding-top:max(10px,env(safe-area-inset-top));}
+  .brand{min-width:0;}.brand-logo{max-width:38px;}
+  .main-nav{gap:5px;}.main-nav a,.main-nav button{padding-left:5px;padding-right:5px;font-size:.78rem;}
+  .header-tools{gap:5px;}.mode-pill{padding-left:7px;padding-right:7px;}.pill,.account-button{padding-left:9px;padding-right:9px;}
+  .hero h1{overflow-wrap:anywhere;}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important;}
+}
