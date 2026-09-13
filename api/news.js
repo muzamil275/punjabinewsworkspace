@@ -1,44 +1,30 @@
 const { json, cors, supabaseFetch, dbJson, karachiDate } = require('../lib/api');
 
-const LOCAL_IMAGES = {
-  fallback: '/news-images/fallback.svg',
-  sport: '/news-images/cricket.svg',
-  rain: '/news-images/fallback.svg',
-  fuel: '/news-images/fuel-prices-20260910.svg',
-  oil: '/news-images/oil-prices-20260911.svg',
-  balochistan: '/news-images/balochistan-security-20260909.svg',
-  airport: '/news-images/airport.svg',
-  aviation: '/news-images/airport.svg',
-  iran: '/news-images/iran-gulf.svg',
-  gulf: '/news-images/iran-gulf.svg',
-  shipping: '/news-images/hormuz-shipping-20260911.svg',
-  gwadar: '/news-images/gwadar-sohar-20260908.svg',
-  paf: '/news-images/paf-day-20260907.svg',
-  england: '/news-images/england-pakistan-20260912.svg',
-  cricket: '/news-images/cricket.svg'
+const LIVE_IMAGES = {
+  cricket: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=1200&q=82',
+  fuel: 'https://images.unsplash.com/photo-1615906655593-ad0386982a0f?auto=format&fit=crop&w=1200&q=82',
+  airport: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=82',
+  shipping: 'https://images.unsplash.com/photo-1524522173746-f628baad3644?auto=format&fit=crop&w=1200&q=82',
+  security: 'https://images.unsplash.com/photo-1453873531674-2151bcd01707?auto=format&fit=crop&w=1200&q=82',
+  city: 'https://images.unsplash.com/photo-1530789253388-582c481c54b0?auto=format&fit=crop&w=1200&q=82',
+  fallback: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=82'
 };
 
-function pickLocalImage(post) {
+function pickLiveImage(post) {
   const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.excerpt_en || ''} ${post.category || ''}`.toLowerCase();
-  if (/balochistan|بلوچستان/.test(text)) return LOCAL_IMAGES.balochistan;
-  if (/rain|weather|monsoon|بارش|موسم/.test(text)) return LOCAL_IMAGES.rain;
-  if (/petrol|diesel|fuel|oil prices|پٹرول|ڈیزل|تیل/.test(text)) return /oil prices|تیل/.test(text) ? LOCAL_IMAGES.oil : LOCAL_IMAGES.fuel;
-  if (/hormuz|shipping|ship|maritime|بحری|شپنگ/.test(text)) return LOCAL_IMAGES.shipping;
-  if (/gwadar|sohar|گوادر/.test(text)) return LOCAL_IMAGES.gwadar;
-  if (/iran|gulf|ایران|خلیج/.test(text)) return LOCAL_IMAGES.iran;
-  if (/airport|aviation|flight|airline|ہوائی اڈ|پرواز/.test(text)) return LOCAL_IMAGES.airport;
-  if (/paf|air force|فضائیہ/.test(text)) return LOCAL_IMAGES.paf;
-  if (/england|pakistan.*test|پاکستان.*انگلینڈ/.test(text)) return LOCAL_IMAGES.england;
-  if (/sport|cricket|match|کھیل|کرکٹ|میچ/.test(text)) return LOCAL_IMAGES.cricket;
-  return LOCAL_IMAGES.fallback;
+  if (/balochistan|security|attack|militant|border|بلوچستان|سکیورٹی|حملہ/.test(text)) return LIVE_IMAGES.security;
+  if (/petrol|diesel|fuel|oil prices|پٹرول|ڈیزل|تیل/.test(text)) return LIVE_IMAGES.fuel;
+  if (/hormuz|shipping|ship|maritime|بحری|شپنگ/.test(text)) return LIVE_IMAGES.shipping;
+  if (/airport|aviation|flight|airline|ہوائی اڈ|پرواز/.test(text)) return LIVE_IMAGES.airport;
+  if (/sport|cricket|match|کھیل|کرکٹ|میچ|england|pakistan.*test|پاکستان.*انگلینڈ/.test(text)) return LIVE_IMAGES.cricket;
+  if (/city|pakistan|islamabad|lahore|karachi|weather|rain|monsoon|پاکستان|اسلام آباد|لاہور|کراچی|بارش|موسم/.test(text)) return LIVE_IMAGES.city;
+  return LIVE_IMAGES.fallback;
 }
 
 function normalizeImages(posts) {
   return (Array.isArray(posts) ? posts : []).map(post => ({
     ...post,
-    image_url: typeof post.image_url === 'string' && post.image_url.startsWith('/')
-      ? post.image_url
-      : pickLocalImage(post)
+    image_url: pickLiveImage(post)
   }));
 }
 
