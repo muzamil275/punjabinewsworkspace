@@ -8,7 +8,6 @@ function installPremiumFixes() {
   const style = document.createElement('style');
   style.id = 'pnw-premium-mobile-fixes';
   style.textContent = `
-    /* Preserve the original Premium visual system: colors, gradients, shadows and motion stay enabled. */
     #premiumMode .premium-news-pager{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin:28px auto 8px;position:relative;z-index:4;padding:4px 0;max-width:100%;}
     #premiumMode .premium-news-pager .news-page{min-width:36px;min-height:36px;padding:7px 9px;border:1px solid var(--premium-line);border-radius:9px;background:var(--premium-surface);color:var(--premium-muted);font:800 .76rem/1.1 inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .18s,border-color .18s,color .18s,background .18s;}
     #premiumMode .premium-news-pager .news-page:hover,#premiumMode .premium-news-pager .news-page:focus-visible{transform:translateY(-2px);border-color:#40556d;color:var(--premium-text);background:var(--premium-surface-2);outline:none;}
@@ -40,7 +39,8 @@ function installPremiumFixes() {
       body[data-mode="premium"] .premium-mode .premium-toolbar{margin:18px auto 16px;gap:7px;width:100%;justify-content:center;}
       body[data-mode="premium"] .premium-mode .premium-grid{grid-template-columns:minmax(0,1fr);gap:12px;width:100%;max-width:680px;margin-left:auto;margin-right:auto;justify-items:stretch;}
       body[data-mode="premium"] .premium-mode .premium-card{grid-column:1 / -1;min-height:0;width:100%;padding:18px;border-radius:12px;overflow:hidden;}
-      body[data-mode="premium"] .premium-mode .premium-card img{display:block;width:calc(100% + 36px);max-width:none;height:auto;aspect-ratio:16/9;margin:-18px -18px 16px;object-fit:cover;object-position:center center;}
+      body[data-mode="premium"] .premium-mode .premium-card .news-image-wrap{width:100%;max-width:100%;margin:0 0 16px;overflow:hidden;}
+      body[data-mode="premium"] .premium-mode .premium-card img{display:block;width:100%!important;max-width:100%!important;height:auto!important;aspect-ratio:16/9;object-fit:contain!important;object-position:center center!important;margin:0!important;}
       body[data-mode="premium"] .premium-mode .premium-card h3{font-size:1.3rem;line-height:1.15;margin:14px 0 9px;overflow-wrap:anywhere;}
       body[data-mode="premium"] .premium-mode .premium-card p{font-size:1rem;line-height:1.5;overflow-wrap:anywhere;}
       body[data-mode="premium"] .premium-mode .premium-news-pager{margin:22px auto 4px;gap:6px;justify-content:center;}
