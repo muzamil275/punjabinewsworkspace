@@ -1,5 +1,24 @@
 const { json, cors, supabaseFetch, dbJson, karachiDate } = require('../lib/api');
 
+const FALLBACK_IMAGES = {
+  sport: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=1200&q=80',
+  rain: 'https://humenglish341f88e60e.blob.core.windows.net/humenglish/uploads/2026/04/rain.png',
+  fuel: 'https://www.inp.net.pk/images/20240423125921_ogImage_1.jpg',
+  balochistan: 'https://upload.wikimedia.org/wikipedia/commons/d/d2/Winding_road_in_Balochistan_%28Pakistan%29_%283964474957%29.jpg'
+};
+
+function addFallbackImages(posts) {
+  return (Array.isArray(posts) ? posts : []).map(post => {
+    if (post.image_url) return post;
+    const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.category || ''}`.toLowerCase();
+    let image_url = FALLBACK_IMAGES.sport;
+    if (/rain|weather|monsoon|بارش|موسم/.test(text)) image_url = FALLBACK_IMAGES.rain;
+    else if (/petrol|diesel|fuel|oil|business|پٹرول|ڈیزل/.test(text)) image_url = FALLBACK_IMAGES.fuel;
+    else if (/balochistan|بلوچستان/.test(text)) image_url = FALLBACK_IMAGES.balochistan;
+    return { ...post, image_url };
+  });
+}
+
 module.exports = async (req, res) => {
   cors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -41,7 +60,7 @@ module.exports = async (req, res) => {
       : [];
 
     return json(res, {
-      posts: Array.isArray(data) ? data : [],
+      posts: addFallbackImages(data),
       date: effectiveDate,
       requestedDate: targetDate,
       isLatestAvailable: effectiveDate !== targetDate,
