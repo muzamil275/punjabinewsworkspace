@@ -127,6 +127,49 @@ async function initialPremiumPager() {
   } catch {}
 }
 
+function openCancelConfirm() {
+  const root = qs('#modalRoot');
+  if (!root) return;
+  root.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="cancel-premium-title"><button class="close" type="button" aria-label="Close">×</button><span class="auth-premium-kicker">PREMIUM</span><h2 id="cancel-premium-title">Cancel Premium</h2><p>Do you want to cancel your Premium access?</p><div class="account-actions"><button class="secondary" type="button" id="cancelPremiumNo">No</button><button class="primary" type="button" id="cancelPremiumYes">Yes, cancel</button></div></div>`;
+  root.classList.remove('hidden');
+  root.setAttribute('aria-hidden','false');
+  const close = () => { root.classList.add('hidden'); root.setAttribute('aria-hidden','true'); root.innerHTML=''; };
+  root.querySelector('.close').onclick = close;
+  root.querySelector('#cancelPremiumNo').onclick = close;
+  root.querySelector('#cancelPremiumYes').onclick = async () => {
+    const yes = root.querySelector('#cancelPremiumYes');
+    yes.disabled = true;
+    yes.textContent = 'Cancelling…';
+    try {
+      const token = localStorage.getItem('pnw_token') || '';
+      const r = await fetch('/api/subscription', { method:'POST', headers: token ? { Authorization:`Bearer ${token}` } : {} });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Could not cancel Premium.');
+      close();
+      const message = data.owner ? 'Owner Premium stays active and cannot be cancelled.' : 'Premium has been cancelled.';
+      const toast = qs('#toast');
+      if (toast) { toast.textContent=message; toast.className='toast success'; toast.classList.remove('hidden'); clearTimeout(window.__pnwCancelToast); window.__pnwCancelToast=setTimeout(()=>toast.classList.add('hidden'),4200); }
+      if (!data.owner) setTimeout(() => location.reload(), 500);
+    } catch (error) {
+      yes.disabled = false;
+      yes.textContent = 'Yes, cancel';
+      const toast = qs('#toast');
+      if (toast) { toast.textContent=error.message||'Could not cancel Premium.'; toast.className='toast error'; toast.classList.remove('hidden'); }
+    }
+  };
+}
+
+function openManagePremium() {
+  const root = qs('#modalRoot');
+  if (!root) return;
+  root.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="manage-premium-title"><button class="close" type="button" aria-label="Close">×</button><span class="auth-premium-kicker">PREMIUM</span><h2 id="manage-premium-title">Manage Premium</h2><p>Premium access is currently active.</p><div class="account-actions"><button class="primary" type="button" id="cancelPremium">Cancel Premium</button></div></div>`;
+  root.classList.remove('hidden');
+  root.setAttribute('aria-hidden','false');
+  const close = () => { root.classList.add('hidden'); root.setAttribute('aria-hidden','true'); root.innerHTML=''; };
+  root.querySelector('.close').onclick = close;
+  root.querySelector('#cancelPremium').onclick = openCancelConfirm;
+}
+
 function installPremiumInteractionGuard() {
   if (window.__pnwPremiumInteractionGuard) return;
   window.__pnwPremiumInteractionGuard = true;
@@ -137,8 +180,7 @@ function installPremiumInteractionGuard() {
     if (manage) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      const cta = qs('#heroCta');
-      if (cta) cta.click();
+      openManagePremium();
       return;
     }
     const clear = target.closest('#geminiClear');
