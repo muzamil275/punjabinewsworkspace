@@ -9,7 +9,6 @@ function installPremiumFixes() {
   const style = document.createElement('style');
   style.id = 'pnw-premium-mobile-fixes';
   style.textContent = `
-    /* Premium uses the same edition pager structure as Basic, but keeps the number/date stacked cleanly. */
     #premiumMode .premium-news-pager{position:relative;z-index:4;width:100%;max-width:100%;}
     #premiumMode .premium-news-pager .news-page{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:52px;min-height:42px;white-space:normal;}
     #premiumMode .premium-news-pager .news-page span{display:block;line-height:1;font-weight:900;}
@@ -128,8 +127,33 @@ async function initialPremiumPager() {
   } catch {}
 }
 
+function installPremiumInteractionGuard() {
+  if (window.__pnwPremiumInteractionGuard) return;
+  window.__pnwPremiumInteractionGuard = true;
+  document.addEventListener('click', e => {
+    const target = e.target instanceof Element ? e.target : null;
+    if (!target) return;
+    const manage = target.closest('#premiumMode .premium-hero [data-action="subscribe"]');
+    if (manage) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const cta = qs('#heroCta');
+      if (cta) cta.click();
+      return;
+    }
+    const clear = target.closest('#geminiClear');
+    if (clear) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (typeof window.PNW_GEMINI_RESET === 'function') window.PNW_GEMINI_RESET();
+      else document.dispatchEvent(new Event('pnw:force-gemini-reset'));
+    }
+  }, true);
+}
+
 function start() {
   installPremiumFixes();
+  installPremiumInteractionGuard();
   initialPremiumPager();
   const observerTarget = qs('#premiumMode');
   if (observerTarget) {
