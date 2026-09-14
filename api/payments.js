@@ -17,16 +17,20 @@ module.exports = async (req, res) => {
     const active = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&status=eq.active&access_ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`, { authHeader }); if (active.ok && (await dbJson(active)).length) return json(res, { error: 'Your Premium access is already active.' }, 409);
     const pending = await supabaseFetch(`payments?user_id=eq.${encodeURIComponent(user.id)}&status=eq.pending&select=id&limit=1`, { authHeader }); if (pending.ok && (await dbJson(pending)).length) return json(res, { error: 'You already have a payment awaiting owner verification.' }, 409);
     const duplicate = await supabaseFetch(`payments?transaction_id=eq.${encodeURIComponent(transactionId)}&status=in.(pending,approved)&select=id&limit=1`, { authHeader }); if (duplicate.ok && (await dbJson(duplicate)).length) return json(res, { error: 'This transaction ID has already been submitted. Please use the correct transaction ID.' }, 409);
-    const objectKey = `${user.id}/${randomName(ext)}';
-    await uploadProof(objectKey, file, authHeader);
-    let proofSaved = true;
+    const objectKey = `${user.id}/${randomName(ext)}`;
+    try {
+      await uploadProof(objectKey, file, authHeader);
+    } catch {
+      try { await deleteProof(objectKey, authHeader); } catch {}
+      return json(res, { error: 'Could not save the payment proof. Nothing was submitted; please try again.' }, 503);
+    }
     try {
       const payment = await supabaseFetch('payments', { method: 'POST', authHeader, headers: { Prefer: 'return=representation' }, body: JSON.stringify({ user_id: user.id, method, transaction_id: transactionId, proof_path: objectKey, amount: price, status: 'pending' }) });
       const paymentRows = await dbJson(payment);
       if (!payment.ok) {
-        await deleteProof(objectKey, authHeader); proofSaved = false;
+        try { await deleteProof(objectKey, authHeader); } catch {}
         if (payment.status === 409 || paymentRows?.code === '23505') return json(res, { error: 'This transaction ID has already been submitted. Please check the transaction ID and try again.' }, 409);
-        return json(res, { error: 'Could not save your payment submission. Your proof upload was not kept. Please try again.' }, 503);
+        return json(res, { error: 'Could not save your payment submission. Your proof was not kept. Please try again.' }, 503);
       }
       const paymentId = paymentRows?.[0]?.id;
       const existingSub = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=id&limit=1`, { authHeader }); const rows = existingSub.ok ? await dbJson(existingSub) : [];
@@ -36,12 +40,12 @@ module.exports = async (req, res) => {
         : await supabaseFetch('subscriptions', { method:'POST', authHeader, headers:{Prefer:'return=minimal'}, body:JSON.stringify({user_id:user.id,...subBody}) });
       if (!sub.ok) {
         if (paymentId) await supabaseFetch(`payments?id=eq.${encodeURIComponent(paymentId)}`, { method:'PATCH', authHeader, headers:{Prefer:'return=minimal'}, body:JSON.stringify({ status:'rejected', reviewed_at:null, reviewed_by:null }) });
-        await deleteProof(objectKey, authHeader); proofSaved = false;
+        try { await deleteProof(objectKey, authHeader); } catch {}
         return json(res, { error: 'Could not create the Premium subscription record. Your payment submission was rolled back; please try again.' }, 503);
       }
       return json(res, { message: 'Payment proof submitted. Premium will be activated after owner verification.' }, 201);
-    } finally {
-      if (!proofSaved) { /* proof cleanup attempted on every failure path */ }
+    } catch (error) {
+      return json(res, { error: error.message || 'Payment submission failed. Please try again.' }, 500);
     }
   } catch (e) { return json(res, { error: e.message || 'Payment submission failed. Please try again.' }, 500); }
 };
