@@ -1,6 +1,6 @@
 const { json, cors, requireUser, isOwner, supabaseFetch, dbJson, safeText, karachiDate } = require('../lib/api');
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-const REQUEST_TIMEOUT_MS = 25000;
+const REQUEST_TIMEOUT_MS = 20000;
 const MAX_HISTORY = 12;
 const MAX_HISTORY_CHARS = 24000;
 
@@ -51,8 +51,8 @@ module.exports = async (req, res) => {
       rows = news.ok ? await dbJson(news) : [];
       if (Array.isArray(rows) && rows.length && rows[0]?.published_on) effectiveDate = rows[0].published_on;
     }
-    if (Array.isArray(rows) && rows.length) context = rows.map((p,i)=>`${i+1}. [${p.category||'News'}] ${p.title_en||''} - ${p.excerpt_en||''}${p.source_name?` (Source: ${p.source_name})`:''}`).join('\n');
-    const instruction = `You are the AI assistant inside Punjabi News Workspace. Answer the user directly and naturally, using the same language and writing style the user uses. This is a strict language-mirroring requirement: if the user writes English, answer in English; if the user writes Urdu script, answer in Urdu script; if the user writes Roman Urdu or Roman Punjabi, answer in the same Roman Urdu/Roman Punjabi style; if the user changes language, follow the new language. Do NOT default to Hindi and do not convert Pakistani Urdu/Roman Urdu into Hindi unless the user explicitly asks for Hindi. Preserve the language/style of the ongoing conversation when the current request depends on earlier turns. Give concise, accurate, useful answers. The website supplies the current/latest published workspace news below. When the user asks for today's news or current workspace news, use these stories directly. Do not claim that you lack access to the website data. Do not invent breaking news, sources, or facts. If the user asks about information not present in the supplied workspace news, clearly distinguish that limitation instead of pretending the workspace contains it.\n\nPakistan date (Asia/Karachi): ${today}\nLatest published workspace edition: ${effectiveDate}\nWorkspace news:\n${context || '(No published workspace news found.)'}\n\nCurrent user request:\n${prompt}`;
+    if (Array.isArray(rows) && rows.length) context = rows.map((p,i)=>`${i+1}. [${p.category||'News'}] ${p.title_en||''} - ${p.excerpt_en||''}${p.source_name?` (Workspace source: ${p.source_name})`:''}`).join('\n');
+    const instruction = `You are the AI assistant inside Punjabi News Workspace. Answer the user directly and naturally, using the same language and writing style the user uses. This is a strict language-mirroring requirement: if the user writes English, answer in English; if the user writes Urdu script, answer in Urdu script; if the user writes Roman Urdu or Roman Punjabi, answer in the same Roman Urdu/Roman Punjabi style; if the user changes language, follow the new language. Do NOT default to Hindi and do not convert Pakistani Urdu/Roman Urdu into Hindi unless the user explicitly asks for Hindi. Preserve the language/style of the ongoing conversation when the current request depends on earlier turns. Keep answers concise and direct. IMPORTANT: Always use Google Search before answering. Do not answer factual or current-information questions from model memory alone. Search the web first, prefer current and reputable sources, and base factual claims on the search results. The workspace news below is context only and is never a substitute for web search. For today's/current news, verify it with Google Search before responding. Do not invent breaking news, sources, or facts.\n\nPakistan date (Asia/Karachi): ${today}\nLatest published workspace edition: ${effectiveDate}\nWorkspace news context:\n${context || '(No published workspace news found.)'}\n\nCurrent user request:\n${prompt}`;
     const controller = new AbortController();
     const timeout = setTimeout(()=>controller.abort(), REQUEST_TIMEOUT_MS);
     let response;
@@ -61,8 +61,9 @@ module.exports = async (req, res) => {
         method:'POST',
         headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
         body:JSON.stringify({
-          systemInstruction:{parts:[{text:'Follow the user language exactly and maintain conversational continuity. Never switch to Hindi unless explicitly requested.'}]},
+          systemInstruction:{parts:[{text:'Always search the web first for factual answers. Follow the user language exactly and keep responses concise. Never switch to Hindi unless explicitly requested.'}]},
           contents:[...history,{role:'user',parts:[{text:instruction}]}],
+          tools:[{google_search:{}}],
           generationConfig:{thinkingConfig:{thinkingLevel:'low',includeThoughts:false}}
         }),
         signal:controller.signal
@@ -75,6 +76,9 @@ module.exports = async (req, res) => {
     if(!response.ok){console.error('Gemini API error',response.status,data?.error?.message||'unknown');return json(res,{error:'Gemini could not complete the request. Please try again.'},response.status>=400&&response.status<500?502:503);}
     const text=Array.isArray(data?.candidates?.[0]?.content?.parts)?data.candidates[0].content.parts.map(part=>part?.text||'').join('').trim():'';
     if(!text)return json(res,{error:'Gemini returned an empty response.'},502);
-    return json(res,{model:MODEL,text,newsDate:effectiveDate},200);
+    const chunks=Array.isArray(data?.candidates?.[0]?.groundingMetadata?.groundingChunks)?data.candidates[0].groundingMetadata.groundingChunks:[];
+    const sources=[];
+    for(const chunk of chunks){const uri=chunk?.web?.uri,title=chunk?.web?.title;if(uri&&title&&!sources.some(s=>s.url===uri))sources.push({title,url:uri});}
+    return json(res,{model:MODEL,text,newsDate:effectiveDate,sources:sources.slice(0,6)},200);
   } catch(e){ console.error('Gemini route error',e); return json(res,{error:'Gemini request failed.'},500); }
 };
