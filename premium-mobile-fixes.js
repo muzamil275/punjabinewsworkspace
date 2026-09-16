@@ -84,7 +84,26 @@ function showEditionLoading(grid) {
   grid.innerHTML = '<div class="premium-gate edition-loading" aria-live="polite"><span class="premium-gate-kicker">Loading edition</span><h3>Switching news date…</h3><p>The selected edition is loading.</p></div>';
 }
 
+async function ensurePremiumAccess() {
+  const token = localStorage.getItem('pnw_token') || '';
+  if (!token) {
+    loadManagementAndOpen();
+    return false;
+  }
+  try {
+    const r = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+    const data = await r.json().catch(() => ({}));
+    const active = Boolean(data.user?.isOwner || data.subscription?.active);
+    if (!active) loadManagementAndOpen();
+    return active;
+  } catch {
+    loadManagementAndOpen();
+    return false;
+  }
+}
+
 async function loadPremiumEdition(date) {
+  if (!(await ensurePremiumAccess())) return;
   const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
   const grid = qs('#premiumGrid');
   const premium = qs('#premiumMode');
