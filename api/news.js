@@ -20,7 +20,6 @@ const LIVE_IMAGES = {
 
 function pickLiveImage(post) {
   const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.excerpt_en || ''} ${post.category || ''}`.toLowerCase();
-
   if (/apni chhat|apna ghar|housing|house|home|housing project|گھر|مکان/.test(text)) return LIVE_IMAGES.housing;
   if (/psx|stock market|shares|investor|trading|kse|remittance|ترسیلات|اسٹاک|سرمایہ کار|شیئر/.test(text)) return LIVE_IMAGES.finance;
   if (/petrol|diesel|fuel|oil price|fuel price|gasoline|پٹرول|ڈیزل|تیل|ایندھن/.test(text)) return LIVE_IMAGES.fuel;
@@ -41,7 +40,6 @@ function pickLiveImage(post) {
 function normalizeImages(posts) {
   return (Array.isArray(posts) ? posts : []).map(post => ({
     ...post,
-    // Preserve a verified/stored story image. Only generate a topical fallback when the record has no image.
     image_url: post.image_url || pickLiveImage(post)
   }));
 }
@@ -78,13 +76,17 @@ module.exports = async (req, res) => {
       }
     }
 
-    const datesResponse = await supabaseFetch(
-      'news_posts?is_published=eq.true&select=published_on&order=published_on.desc&limit=1000'
-    );
-    const dateRows = await dbJson(datesResponse);
-    const availableDates = Array.isArray(dateRows)
-      ? [...new Set(dateRows.map(x => x.published_on).filter(Boolean))]
-      : [];
+    const includeDates = String(req.query?.includeDates ?? (hasExplicitDate ? '0' : '1')) !== '0';
+    let availableDates = [];
+    if (includeDates) {
+      const datesResponse = await supabaseFetch(
+        'news_posts?is_published=eq.true&select=published_on&order=published_on.desc&limit=1000'
+      );
+      const dateRows = await dbJson(datesResponse);
+      availableDates = Array.isArray(dateRows)
+        ? [...new Set(dateRows.map(x => x.published_on).filter(Boolean))]
+        : [];
+    }
 
     return json(res, {
       posts: normalizeImages(data),
