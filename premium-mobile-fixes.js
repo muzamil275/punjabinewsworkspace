@@ -15,6 +15,8 @@ function installPremiumFixes() {
     #premiumMode .premium-news-pager .news-page{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:52px;min-height:42px;white-space:normal;}
     #premiumMode .premium-news-pager .news-page span{display:block;line-height:1;font-weight:900;}
     #premiumMode .premium-news-pager .news-page small{display:block;line-height:1.05;font-size:.62rem;white-space:nowrap;}
+    body[data-mode="premium"] .premium-mode .premium-hero .muted{color:#d9e2ef!important;font-weight:500;line-height:1.55;letter-spacing:.005em;text-shadow:0 1px 10px rgba(0,0,0,.25);}
+    body[data-mode="premium"] .premium-mode .premium-hero .muted::selection{background:rgba(255,181,46,.35);color:#fff;}
     body[data-mode="premium"] .premium-mode .premium-card h3,
     body[data-mode="premium"] .premium-mode .premium-card p,
     body[data-mode="premium"] .premium-mode .premium-card .card-meta,
