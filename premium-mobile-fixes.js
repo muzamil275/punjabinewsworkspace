@@ -3,6 +3,8 @@
 
 const qs = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
+const editionCache = new Map();
+let editionLoadSeq = 0;
 
 function installPremiumFixes() {
   if (qs('#pnw-premium-mobile-fixes')) return;
@@ -28,7 +30,7 @@ function installPremiumFixes() {
     body[data-mode="premium"] .premium-mode .premium-card h3{overflow-wrap:anywhere;}
     body[data-mode="premium"] .premium-mode .premium-card p{overflow-wrap:anywhere;}
     body[data-mode="premium"] .premium-mode .premium-card .card-meta{overflow-wrap:anywhere;}
-    body[data-mode="premium"] .premium-mode .premium-card img{max-width:100%;object-position:center center;}
+    body[data-mode="premium"] .premium-mode .premium-card img{max-width:100%;object-position:center center;display:block;}
     body[data-mode="premium"] .premium-mode .premium-toolbar{justify-content:center;align-items:center;}
     body[data-mode="premium"] .premium-mode{overflow:visible!important;overflow-x:clip!important;touch-action:pan-y;overscroll-behavior-x:none;-webkit-overflow-scrolling:touch;}
     @media (max-width:700px){
@@ -40,7 +42,7 @@ function installPremiumFixes() {
       body[data-mode="premium"] .premium-mode .premium-grid{grid-template-columns:minmax(0,1fr);gap:12px;width:100%;max-width:680px;margin-left:auto;margin-right:auto;justify-items:stretch;}
       body[data-mode="premium"] .premium-mode .premium-card{grid-column:1 / -1;min-height:0;width:100%;padding:18px;border-radius:12px;overflow:hidden;}
       body[data-mode="premium"] .premium-mode .premium-card .news-image-wrap{width:100%;max-width:100%;margin:0 0 16px;overflow:hidden;}
-      body[data-mode="premium"] .premium-mode .premium-card img{display:block;width:100%!important;max-width:100%!important;height:auto!important;aspect-ratio:16/9;object-fit:contain!important;object-position:center center!important;margin:0!important;}
+      body[data-mode="premium"] .premium-mode .premium-card img{display:block;width:100%!important;max-width:100%!important;height:auto!important;aspect-ratio:16/9;object-fit:cover!important;object-position:center center!important;margin:0!important;}
       body[data-mode="premium"] .premium-mode .premium-card h3{font-size:1.3rem;line-height:1.15;margin:14px 0 9px;overflow-wrap:anywhere;}
       body[data-mode="premium"] .premium-mode .premium-card p{font-size:1rem;line-height:1.5;overflow-wrap:anywhere;}
       body[data-mode="premium"] .premium-mode .premium-news-pager{margin:22px auto 4px;gap:6px;justify-content:center;}
@@ -65,34 +67,63 @@ function renderPremiumCards(posts, lang) {
     grid.innerHTML = '<div class="premium-gate"><span class="premium-gate-kicker">Edition unavailable</span><h3>No stories for this edition.</h3><p>Please choose another date from the editions below.</p></div>';
     return;
   }
-  grid.innerHTML = cards.map(p => {
+  grid.innerHTML = cards.map((p, index) => {
     const title = lang === 'ur' ? p.title_ur : p.title_en;
     const text = lang === 'ur' ? p.excerpt_ur : p.excerpt_en;
     const source = p.source_url && p.source_name
       ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>`
       : (p.source_name ? esc(p.source_name) : '');
-    const image = p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async">` : '';
+    const loading = index < 2 ? 'eager' : 'lazy';
+    const priority = index < 2 ? ' fetchpriority="high"' : '';
+    const image = p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="${loading}" decoding="async"${priority}>` : '';
     return `<article class="news-card premium-card">${image}<div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${formatDate(p.published_on || p.updated_at, lang)}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div><span class="premium-tag">Premium mode</span></article>`;
   }).join('');
+}
+
+function showEditionLoading(grid) {
+  grid.innerHTML = '<div class="premium-gate edition-loading" aria-live="polite"><span class="premium-gate-kicker">Loading edition</span><h3>Switching news date…</h3><p>The selected edition is loading.</p></div>';
 }
 
 async function loadPremiumEdition(date) {
   const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
   const grid = qs('#premiumGrid');
+  const premium = qs('#premiumMode');
   if (!grid) return;
+  const requestId = ++editionLoadSeq;
+  const scrollY = window.scrollY;
   grid.setAttribute('aria-busy','true');
+
+  const cached = editionCache.get(`${lang}:${date}`);
+  if (cached) {
+    renderPremiumCards(cached.posts || [], lang);
+    const newsDate = qs('#newsDate');
+    if (newsDate) newsDate.textContent = formatDate(cached.date || date, lang);
+    syncPremiumPager(cached.availableDates?.length ? cached.availableDates : [], cached.date || date);
+    window.scrollTo({ top: scrollY, behavior:'auto' });
+  } else {
+    showEditionLoading(grid);
+  }
+
   try {
-    const r = await fetch(`/api/news?lang=${encodeURIComponent(lang)}&date=${encodeURIComponent(date)}`, { cache:'no-store' });
+    const r = await fetch(`/api/news?lang=${encodeURIComponent(lang)}&date=${encodeURIComponent(date)}&includeDates=0`, { cache:'no-store' });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'News request failed.');
+    editionCache.set(`${lang}:${date}`, data);
+    if (requestId !== editionLoadSeq) return;
     renderPremiumCards(data.posts || [], lang);
     const newsDate = qs('#newsDate');
     if (newsDate) newsDate.textContent = formatDate(data.date || date, lang);
-    syncPremiumPager(data.availableDates || [], data.date || date);
+    const currentPager = qs('#premiumNewsPager');
+    const existingDates = currentPager ? [...currentPager.querySelectorAll('[data-premium-date]')].map(b => b.dataset.premiumDate) : [];
+    syncPremiumPager(existingDates, data.date || date);
+    window.scrollTo({ top: scrollY, behavior:'auto' });
   } catch {
-    grid.innerHTML = '<div class="premium-gate"><span class="premium-gate-kicker">Edition unavailable</span><h3>Could not load this edition.</h3><p>Please try another date.</p></div>';
+    if (requestId === editionLoadSeq) {
+      grid.innerHTML = '<div class="premium-gate"><span class="premium-gate-kicker">Edition unavailable</span><h3>Could not load this edition.</h3><p>Please try another date.</p></div>';
+      window.scrollTo({ top: scrollY, behavior:'auto' });
+    }
   } finally {
-    grid.setAttribute('aria-busy','false');
+    if (requestId === editionLoadSeq) grid.setAttribute('aria-busy','false');
   }
 }
 
@@ -120,9 +151,10 @@ function syncPremiumPager(availableDates, activeDate) {
 async function initialPremiumPager() {
   try {
     const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
-    const r = await fetch(`/api/news?lang=${encodeURIComponent(lang)}`, { cache:'no-store' });
+    const r = await fetch(`/api/news?lang=${encodeURIComponent(lang)}&includeDates=1`, { cache:'no-store' });
     const data = await r.json();
     if (!r.ok) return;
+    editionCache.set(`${lang}:${data.date}`, data);
     syncPremiumPager(data.availableDates || [], data.date);
   } catch {}
 }
