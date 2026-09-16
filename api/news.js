@@ -8,6 +8,9 @@ const LIVE_IMAGES = {
   flood: 'https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=1200&q=82',
   housing: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=82',
   technology: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=82',
+  telecom: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82',
+  automotive: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=82',
+  food: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1200&q=82',
   diplomacy: 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=82',
   airport: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=82',
   shipping: 'https://images.unsplash.com/photo-1524522173746-f628baad3644?auto=format&fit=crop&w=1200&q=82',
@@ -21,6 +24,10 @@ const LIVE_IMAGES = {
 function pickLiveImage(post) {
   const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.excerpt_en || ''} ${post.category || ''}`.toLowerCase();
   if (/apni chhat|apna ghar|housing|house|home|housing project|گھر|مکان/.test(text)) return LIVE_IMAGES.housing;
+  if (/ufone|onic|telecom|5g|sim|e?sim|mobile network|ptcl|یوفون|اونک|ٹیلی کام|موبائل/.test(text)) return LIVE_IMAGES.telecom;
+  if (/car sales|cars|automotive|vehicle|vehicles|auto policy|گاڑی|کار|آٹو/.test(text)) return LIVE_IMAGES.automotive;
+  if (/sugar|wheat|food security|agriculture|چینی|گندم|زراعت|خوراک/.test(text)) return LIVE_IMAGES.food;
+  if (/public firms|state-owned|soes|profit-making|loss-making|سرکاری ادارے|منافع|خسارہ/.test(text)) return LIVE_IMAGES.finance;
   if (/psx|stock market|shares|investor|trading|kse|remittance|ترسیلات|اسٹاک|سرمایہ کار|شیئر/.test(text)) return LIVE_IMAGES.finance;
   if (/petrol|diesel|fuel|oil price|fuel price|gasoline|پٹرول|ڈیزل|تیل|ایندھن/.test(text)) return LIVE_IMAGES.fuel;
   if (/flood|rain|rainfall|ndma|monsoon|flood-hit|flood risk|بارش|سیلاب|مون سون|این ڈی ایم اے/.test(text)) return LIVE_IMAGES.flood;
@@ -29,7 +36,7 @@ function pickLiveImage(post) {
   if (/cricket|test match|england.*pakistan|pakistan.*england|pcb|player conduct|over-rate|world test championship|کرکٹ|ٹیسٹ|پی سی بی/.test(text)) return LIVE_IMAGES.cricket;
   if (/alcaraz|sabalenka|zverev|us open|tennis|الکاراز|سبالینکا|زویریو|ٹینس/.test(text)) return LIVE_IMAGES.tennis;
   if (/technology|openai|gpt|anthropic|artificial intelligence|ai development|cybersecurity|ٹیکنالوجی|اے آئی|مصنوعی ذہانت/.test(text)) return LIVE_IMAGES.technology;
-  if (/remittances|economy|business|psx|stock|market|oil prices|opec|pipeline|energy|lNG|lng|electricity|nepra|توانائی|معیشت|کاروبار|بجلی/.test(text)) return LIVE_IMAGES.energy;
+  if (/remittances|economy|business|market|oil prices|opec|pipeline|energy|lng|electricity|nepra|توانائی|معیشت|کاروبار|بجلی/.test(text)) return LIVE_IMAGES.energy;
   if (/diplomacy|diplomatic|un general assembly|united nations|mecca pact|pact|peace talks|sanctions|foreign minister|foreign affairs|سفارتی|اقوام متحدہ|معاہدہ|امن مذاکرات|پابندیاں/.test(text)) return LIVE_IMAGES.diplomacy;
   if (/security|terror|militant|attack|section 144|balochistan|insurgent|police|terrorism|دہشت|شدت پسند|حملہ|سکیورٹی|بلوچستان|پولیس|دفعہ 144/.test(text)) return LIVE_IMAGES.security;
   if (/gloria steinem|dies at|death|obituary|انتقال|وفات/.test(text)) return LIVE_IMAGES.person;
@@ -38,64 +45,40 @@ function pickLiveImage(post) {
 }
 
 function normalizeImages(posts) {
-  return (Array.isArray(posts) ? posts : []).map(post => ({
-    ...post,
-    image_url: post.image_url || pickLiveImage(post)
-  }));
+  return (Array.isArray(posts) ? posts : []).map(post => ({...post,image_url:post.image_url || pickLiveImage(post)}));
 }
 
 module.exports = async (req, res) => {
   cors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return json(res, { error: 'Method not allowed.' }, 405);
-
   try {
     const today = karachiDate();
     const hasExplicitDate = Boolean(req.query?.date);
     const requestedDate = String(req.query?.date || today);
     const targetDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) ? requestedDate : today;
     const select = 'id,category,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on,daily_rank,updated_at';
-
-    let r = await supabaseFetch(
-      `news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`
-    );
+    let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
     let data = await dbJson(r);
     if (!r.ok) return json(res, { error: 'News is temporarily unavailable.' }, 503);
-
     let effectiveDate = targetDate;
     if (!Array.isArray(data) || data.length === 0) {
-      if (hasExplicitDate) {
-        data = [];
-      } else {
-        r = await supabaseFetch(
-          `news_posts?is_published=eq.true&select=${select}&order=published_on.desc,daily_rank.asc&limit=5`
-        );
+      if (hasExplicitDate) data = [];
+      else {
+        r = await supabaseFetch(`news_posts?is_published=eq.true&select=${select}&order=published_on.desc,daily_rank.asc&limit=5`);
         data = await dbJson(r);
         if (!r.ok) return json(res, { error: 'News is temporarily unavailable.' }, 503);
         effectiveDate = Array.isArray(data) && data[0]?.published_on ? data[0].published_on : targetDate;
       }
     }
-
     const includeDates = String(req.query?.includeDates ?? (hasExplicitDate ? '0' : '1')) !== '0';
     let availableDates = [];
     if (includeDates) {
-      const datesResponse = await supabaseFetch(
-        'news_posts?is_published=eq.true&select=published_on&order=published_on.desc&limit=1000'
-      );
+      const datesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on&order=published_on.desc&limit=1000');
       const dateRows = await dbJson(datesResponse);
-      availableDates = Array.isArray(dateRows)
-        ? [...new Set(dateRows.map(x => x.published_on).filter(Boolean))]
-        : [];
+      availableDates = Array.isArray(dateRows) ? [...new Set(dateRows.map(x => x.published_on).filter(Boolean))] : [];
     }
-
-    return json(res, {
-      posts: normalizeImages(data),
-      date: effectiveDate,
-      requestedDate: targetDate,
-      isLatestAvailable: effectiveDate !== targetDate,
-      availableDates,
-      language: req.query?.lang === 'ur' ? 'ur' : 'en'
-    });
+    return json(res, {posts:normalizeImages(data),date:effectiveDate,requestedDate:targetDate,isLatestAvailable:effectiveDate!==targetDate,availableDates,language:req.query?.lang==='ur'?'ur':'en'});
   } catch (e) {
     return json(res, { error: e.message || 'News request failed.' }, 500);
   }
