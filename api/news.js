@@ -29,11 +29,12 @@ function pickLiveImage(post) {
   if (/sugar|wheat|food security|agriculture|چینی|گندم|زراعت|خوراک/.test(text)) return LIVE_IMAGES.food;
   if (/public firms|state-owned|soes|profit-making|loss-making|سرکاری ادارے|منافع|خسارہ/.test(text)) return LIVE_IMAGES.finance;
   if (/psx|stock market|shares|investor|trading|kse|remittance|ترسیلات|اسٹاک|سرمایہ کار|شیئر/.test(text)) return LIVE_IMAGES.finance;
+  if (/exchange facility|exchange line|swap facility|currency facility|central bank facility|10bn|\$10bn|\$10 billion|10 billion/.test(text)) return LIVE_IMAGES.finance;
   if (/petrol|diesel|fuel|oil price|fuel price|gasoline|پٹرول|ڈیزل|تیل|ایندھن/.test(text)) return LIVE_IMAGES.fuel;
   if (/flood|rain|rainfall|ndma|monsoon|flood-hit|flood risk|بارش|سیلاب|مون سون|این ڈی ایم اے/.test(text)) return LIVE_IMAGES.flood;
   if (/naval|navy|warship|ship collision|vessel collision|maritime|shipping|hormuz|commercial vessel|بحری جہاز|بحری|جہاز|آبنائے ہرمز/.test(text)) return LIVE_IMAGES.shipping;
   if (/airport|aviation|flight|airline|drone|amritsar|پرواز|ایئرپورٹ|ہوائی اڈ/.test(text)) return LIVE_IMAGES.airport;
-  if (/cricket|test match|england.*pakistan|pakistan.*england|pcb|player conduct|over-rate|world test championship|کرکٹ|ٹیسٹ|پی سی بی/.test(text)) return LIVE_IMAGES.cricket;
+  if (/cricket|test match|england.*pakistan|pakistan.*england|pcb|player conduct|over-rate|world test championship|asian games|کرکٹ|ٹیسٹ|پی سی بی|ایشیائی کھیل/.test(text)) return LIVE_IMAGES.cricket;
   if (/alcaraz|sabalenka|zverev|us open|tennis|الکاراز|سبالینکا|زویریو|ٹینس/.test(text)) return LIVE_IMAGES.tennis;
   if (/technology|openai|gpt|anthropic|artificial intelligence|ai development|cybersecurity|ٹیکنالوجی|اے آئی|مصنوعی ذہانت/.test(text)) return LIVE_IMAGES.technology;
   if (/remittances|economy|business|market|oil prices|opec|pipeline|energy|lng|electricity|nepra|توانائی|معیشت|کاروبار|بجلی/.test(text)) return LIVE_IMAGES.energy;
