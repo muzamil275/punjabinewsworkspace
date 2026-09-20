@@ -162,7 +162,7 @@ function syncPremiumPager(availableDates, activeDate) {
   } else if (pager.parentNode !== grid.parentNode || pager.nextElementSibling !== grid) {
     grid.parentNode.insertBefore(pager, grid);
   }
-  const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))].slice(0, 5);
+  const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))];
   if (!dates.length) { pager.innerHTML = ''; return; }
   const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
   pager.innerHTML = dates.map((date, i) => `<button type="button" class="news-page${date === activeDate ? ' active' : ''}" data-premium-date="${esc(date)}" aria-label="News edition ${i + 1}, ${esc(formatDate(date, lang))}" aria-current="${date === activeDate ? 'page' : 'false'}"><span>${i + 1}</span><small>${esc(formatDate(date, lang))}</small></button>`).join('');
