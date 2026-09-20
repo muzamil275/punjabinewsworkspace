@@ -1,10 +1,10 @@
 const { json, cors, requireUser, isOwner, supabaseFetch, dbJson, getEnv } = require('../../lib/api');
 module.exports = async (req, res) => {
   cors(req, res); if (req.method === 'OPTIONS') return res.status(204).end();
-  const id = String(req.query?.id || ''); if (!/^\d+$/.test(id)) return json(res, { error:'Invalid payment ID.' }, 422);
   const authHeader = req.headers.authorization || '';
   try {
     const user = await requireUser(req, res); if (!user) return; if (!isOwner(user)) return json(res, { error:'Owner access required.' }, 403);
+    const id = String(req.query?.id || ''); if (!/^\d+$/.test(id)) return json(res, { error:'Invalid payment ID.' }, 422);
     if (req.method === 'PATCH') {
       const action = req.body?.action; if (!['approve','reject'].includes(action)) return json(res,{error:'Invalid review action.'},422);
       const found = await supabaseFetch(`payments?id=eq.${encodeURIComponent(id)}&select=id,user_id,status&limit=1`,{authHeader}); const payment = found.ok ? (await dbJson(found))[0] : null; if (!payment || payment.status !== 'pending') return json(res,{error:'This payment cannot be reviewed.'},404);

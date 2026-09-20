@@ -15,7 +15,7 @@ function installPremiumFixes() {
     #premiumMode .premium-news-pager .news-page{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:52px;min-height:42px;white-space:normal;}
     #premiumMode .premium-news-pager .news-page span{display:block;line-height:1;font-weight:900;}
     #premiumMode .premium-news-pager .news-page small{display:block;line-height:1.05;font-size:.62rem;white-space:nowrap;}
-    body[data-mode="premium"] .premium-mode .premium-hero .muted{color:#d9e2ef!important;font-weight:500;line-height:1.55;letter-spacing:.005em;text-shadow:0 1px 10px rgba(0,0,0,.25);}
+    body[data-mode="premium"] .premium-mode .premium-hero .secondary{white-space:nowrap;min-width:max-content;}body[data-mode="premium"] .premium-mode .premium-hero .muted{color:#d9e2ef!important;font-weight:500;line-height:1.55;letter-spacing:.005em;text-shadow:0 1px 10px rgba(0,0,0,.25);}
     body[data-mode="premium"] .premium-mode .premium-hero .muted::selection{background:rgba(255,181,46,.35);color:#fff;}
     body[data-mode="premium"] .premium-mode .premium-card h3,
     body[data-mode="premium"] .premium-mode .premium-card p,
@@ -163,7 +163,7 @@ function syncPremiumPager(availableDates, activeDate) {
     grid.parentNode.insertBefore(pager, grid);
   }
   const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))];
-  if (!dates.length) { pager.innerHTML = ''; return; }
+  if (!dates.length) { pager.innerHTML = '<button type="button" class="news-page retry-editions" id="retryPremiumEditions" aria-label="Retry loading news editions"><span>↻</span><small>Retry editions</small></button>'; pager.querySelector('#retryPremiumEditions')?.addEventListener('click',initialPremiumPager); return; }
   const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
   pager.innerHTML = dates.map((date, i) => `<button type="button" class="news-page${date === activeDate ? ' active' : ''}" data-premium-date="${esc(date)}" aria-label="News edition ${i + 1}, ${esc(formatDate(date, lang))}" aria-current="${date === activeDate ? 'page' : 'false'}"><span>${i + 1}</span><small>${esc(formatDate(date, lang))}</small></button>`).join('');
   pager.querySelectorAll('[data-premium-date]').forEach(btn => btn.addEventListener('click', () => loadPremiumEdition(btn.dataset.premiumDate)));
@@ -185,7 +185,7 @@ function loadManagementAndOpen() {
   const existing = document.querySelector('script[data-pnw-premium-management]');
   if (existing) return;
   const script = document.createElement('script');
-  script.src = '/premium-management.js?v=20260921a';
+  script.src = '/premium-management-v2.js?v=20260920d';
   script.dataset.pnwPremiumManagement = 'true';
   script.onload = () => window.PNW_PREMIUM_MANAGE?.();
   script.onerror = () => {

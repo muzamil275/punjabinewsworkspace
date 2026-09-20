@@ -21,6 +21,11 @@ const LIVE_IMAGES = {
   fallback: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=82'
 };
 
+const NEWS_RATE_WINDOW_MS = 60 * 1000;
+const NEWS_RATE_LIMIT = 60;
+const newsRate = global.__pnwNewsRate || (global.__pnwNewsRate = new Map());
+function newsClientIp(req) { const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim(); return forwarded || String(req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown'); }
+
 function pickLiveImage(post) {
   const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.excerpt_en || ''} ${post.category || ''}`.toLowerCase();
   if (/apni chhat|apna ghar|housing|house|home|housing project|گھر|مکان/.test(text)) return LIVE_IMAGES.housing;
@@ -53,6 +58,10 @@ module.exports = async (req, res) => {
   cors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return json(res, { error: 'Method not allowed.' }, 405);
+  const now = Date.now(), ip = newsClientIp(req), previous = newsRate.get(ip);
+  if (!previous || now - previous.startedAt >= NEWS_RATE_WINDOW_MS) newsRate.set(ip, { startedAt: now, count: 1 });
+  else { previous.count += 1; if (previous.count > NEWS_RATE_LIMIT) { res.setHeader('Retry-After','60'); return json(res, { error:'Too many news requests. Please try again in a minute.' }, 429); } }
+  if (req.query?.lang && !['en','ur'].includes(String(req.query.lang))) return json(res, { error:'Unsupported language. Use lang=en or lang=ur.' }, 400);
   try {
     const today = karachiDate();
     const hasExplicitDate = Boolean(req.query?.date);
