@@ -29,10 +29,4 @@ window.PNW_CONFIG = {
   const style = document.createElement('style');
   style.textContent = '#newsGrid{visibility:visible!important;}';
   document.head.appendChild(style);
-  if (!document.querySelector('script[data-pnw-premium-management-v2]')) {
-    const script = document.createElement('script');
-    script.src = '/premium-management-v2.js?v=20260922a';
-    script.dataset.pnwPremiumManagementV2 = 'true';
-    document.head.appendChild(script);
-  }
 })();
