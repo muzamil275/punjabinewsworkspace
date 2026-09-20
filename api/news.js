@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
         effectiveDate = Array.isArray(data) && data[0]?.published_on ? data[0].published_on : targetDate;
       }
     }
-    const includeDates = String(req.query?.includeDates ?? (hasExplicitDate ? '0' : '1')) !== '0';
+    const includeDates = String(req.query?.includeDates ?? '1') !== '0';
     let availableDates = [];
     if (includeDates) {
       const datesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on&order=published_on.desc&limit=1000');
