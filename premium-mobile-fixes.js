@@ -11,7 +11,7 @@ function installPremiumFixes() {
   const style = document.createElement('style');
   style.id = 'pnw-premium-mobile-fixes';
   style.textContent = `
-    #premiumMode .premium-news-pager{position:relative;z-index:4;width:100%;max-width:100%;}
+    #premiumMode .premium-news-pager{position:relative;z-index:4;width:100%;max-width:100%;margin:0 0 18px;}
     #premiumMode .premium-news-pager .news-page{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:52px;min-height:42px;white-space:normal;}
     #premiumMode .premium-news-pager .news-page span{display:block;line-height:1;font-weight:900;}
     #premiumMode .premium-news-pager .news-page small{display:block;line-height:1.05;font-size:.62rem;white-space:nowrap;}
@@ -158,11 +158,11 @@ function syncPremiumPager(availableDates, activeDate) {
     pager.id = 'premiumNewsPager';
     pager.className = 'news-pager premium-news-pager';
     pager.setAttribute('aria-label', 'News editions');
-    grid.parentNode.appendChild(pager);
-  } else if (pager.parentNode !== grid.parentNode || pager.previousElementSibling !== grid) {
-    grid.parentNode.appendChild(pager);
+    grid.parentNode.insertBefore(pager, grid);
+  } else if (pager.parentNode !== grid.parentNode || pager.nextElementSibling !== grid) {
+    grid.parentNode.insertBefore(pager, grid);
   }
-  const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))].slice(0, 12);
+  const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))].slice(0, 5);
   if (!dates.length) { pager.innerHTML = ''; return; }
   const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
   pager.innerHTML = dates.map((date, i) => `<button type="button" class="news-page${date === activeDate ? ' active' : ''}" data-premium-date="${esc(date)}" aria-label="News edition ${i + 1}, ${esc(formatDate(date, lang))}" aria-current="${date === activeDate ? 'page' : 'false'}"><span>${i + 1}</span><small>${esc(formatDate(date, lang))}</small></button>`).join('');
