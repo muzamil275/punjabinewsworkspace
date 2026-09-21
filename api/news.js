@@ -74,7 +74,6 @@ module.exports = async (req, res) => {
     const effectiveDate = targetDate;
     if (!Array.isArray(data)) data = [];
     if (!hasExplicitDate && data.length !== 5) data = [];
-    }
     const includeDates = String(req.query?.includeDates ?? '1') !== '0';
     let availableDates = [];
     if (includeDates) {
