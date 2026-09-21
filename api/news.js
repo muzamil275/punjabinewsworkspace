@@ -71,15 +71,9 @@ module.exports = async (req, res) => {
     let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
     let data = await dbJson(r);
     if (!r.ok) return json(res, { error: 'News is temporarily unavailable.' }, 503);
-    let effectiveDate = targetDate;
-    if (!Array.isArray(data) || data.length === 0) {
-      if (hasExplicitDate) data = [];
-      else {
-        r = await supabaseFetch(`news_posts?is_published=eq.true&select=${select}&order=published_on.desc,daily_rank.asc&limit=5`);
-        data = await dbJson(r);
-        if (!r.ok) return json(res, { error: 'News is temporarily unavailable.' }, 503);
-        effectiveDate = Array.isArray(data) && data[0]?.published_on ? data[0].published_on : targetDate;
-      }
+    const effectiveDate = targetDate;
+    if (!Array.isArray(data)) data = [];
+    if (!hasExplicitDate && data.length !== 5) data = [];
     }
     const includeDates = String(req.query?.includeDates ?? '1') !== '0';
     let availableDates = [];
