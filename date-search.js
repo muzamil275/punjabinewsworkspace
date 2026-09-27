@@ -10,7 +10,7 @@
     if (q('#dateSearchStyles')) return;
     const s = document.createElement('style');
     s.id = 'dateSearchStyles';
-    s.textContent = `.date-search-controls{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;width:100%;margin:0 0 18px}.date-search-controls label{display:flex;flex-direction:column;gap:5px;font-size:.72rem;font-weight:800;opacity:.75}.date-search-controls input,.date-search-controls select{height:42px;border:1px solid rgba(127,120,109,.22);border-radius:12px;padding:0 11px;background:transparent;color:inherit;font:inherit;min-width:150px}.date-search-controls button{height:42px;white-space:nowrap}.main-nav .text-button{transform:translateY(-2px)}@media(max-width:600px){.date-search-controls{align-items:stretch}.date-search-controls label{flex:1;min-width:140px}.date-search-controls input,.date-search-controls select{width:100%;min-width:0}.date-search-controls button{width:100%}}`;
+    s.textContent = `.date-search-controls{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;width:100%;margin:0 0 18px}.date-search-controls label{display:flex;flex-direction:column;gap:5px;font-size:.72rem;font-weight:800;opacity:.75}.date-search-controls input,.date-search-controls select{height:42px;border:1px solid rgba(127,120,109,.22);border-radius:12px;padding:0 11px;background:transparent;color:inherit;font:inherit;min-width:150px}.date-search-controls button{height:42px;white-space:nowrap}.main-nav .text-button{transform:translateY(-2px)}#newsGrid .news-card{user-select:text;-webkit-user-select:text}@media(max-width:600px){.date-search-controls{align-items:stretch}.date-search-controls label{flex:1;min-width:140px}.date-search-controls input,.date-search-controls select{width:100%;min-width:0}.date-search-controls button{width:100%}}`;
     document.head.appendChild(s);
   }
 
@@ -24,8 +24,9 @@
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'News request failed.');
       const posts = Array.isArray(d.posts) ? d.posts : [];
+      const actualDate = d.date || date;
       const dateEl = q('#newsDate');
-      if (dateEl) dateEl.textContent = d.date ? formatDate(d.date) : formatDate(date);
+      if (dateEl) dateEl.textContent = actualDate ? formatDate(actualDate) : formatDate(date);
       if (!posts.length && !d.isLatestAvailable) {
         grid.innerHTML = '<div class="loading-card" role="status"><p>Edition unavailable — pick another date.</p></div>';
       } else if (!posts.length) {
@@ -39,7 +40,8 @@
           return `<article class="news-card"><div class="news-image-wrap">${image ? image.replace('<div class="news-image-wrap">','').replace('</div>','') : ''}</div><div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(formatDate(p.published_on))}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div></article>`;
         }).join('');
       }
-      localStorage.setItem('pnw_selected_news_date', d.date || date);
+      localStorage.setItem('pnw_selected_news_date', actualDate);
+      window.dispatchEvent(new CustomEvent('pnw:news-edition',{detail:{date:actualDate,posts}}));
     } catch {
       grid.innerHTML = '<div class="loading-card error" role="alert"><div><p>Couldn’t load this edition.</p><span>Please try again.</span></div></div>';
     } finally {
@@ -47,8 +49,48 @@
     }
   }
 
+  function protectSelectedEdition() {
+    const grid = q('#newsGrid');
+    if (!grid || grid.__pnwEditionGuard) return;
+    grid.__pnwEditionGuard = true;
+    let lastGoodHTML = '';
+    let lastGoodDate = '';
+    let restoring = false;
+    const capture = () => {
+      const cards = grid.querySelectorAll('.news-card');
+      if (cards.length) {
+        lastGoodHTML = grid.innerHTML;
+        lastGoodDate = localStorage.getItem('pnw_selected_news_date') || '';
+      }
+    };
+    capture();
+    const observer = new MutationObserver(() => {
+      if (restoring) return;
+      capture();
+      if (!lastGoodHTML || !lastGoodDate) return;
+      if (grid.querySelector('.news-card')) return;
+      const selected = localStorage.getItem('pnw_selected_news_date') || '';
+      if (!selected || selected !== lastGoodDate) return;
+      const text = (grid.textContent || '').trim().toLowerCase();
+      if (!text.includes('no stories') && !text.includes('today')) return;
+      restoring = true;
+      queueMicrotask(() => {
+        if (localStorage.getItem('pnw_selected_news_date') === lastGoodDate && !grid.querySelector('.news-card')) grid.innerHTML = lastGoodHTML;
+        restoring = false;
+      });
+    });
+    observer.observe(grid,{childList:true,subtree:true});
+  }
+
+  function setupGuardWhenReady() {
+    const run = () => protectSelectedEdition();
+    if (q('#newsGrid')) run();
+    else setTimeout(run, 500);
+  }
+
   async function setup() {
     styles();
+    setupGuardWhenReady();
     const pager = q('#newsPager');
     if (!pager || q('#pnwDateSearch')) return;
     let dates = [];
