@@ -22,17 +22,23 @@
     $("#languageToggle").textContent = state.language === "en" ? "اردو" : "English"; localStorage.setItem("pnw_language", state.language); loadNews();
   }
   async function loadNews() {
+    const requestedLanguage = state.language;
     const grid = $("#newsGrid"); grid.innerHTML = '<div class="loading-card">Loading today’s brief…</div>';
     try {
-      const data = await api(`/news?lang=${state.language}`); const posts = data.posts || [];
+      const data = await api(`/news?lang=${requestedLanguage}`);
+      if (requestedLanguage !== state.language) return;
+      const posts = data.posts || [];
       const effectiveDate = data.date || data.requestedDate;
       const dateEl = $("#newsDate");
       if (dateEl && effectiveDate) {
-        dateEl.textContent = new Intl.DateTimeFormat(state.language === "ur" ? "ur-PK" : "en-PK", { dateStyle: "medium" }).format(new Date(`${effectiveDate}T12:00:00`));
+        dateEl.textContent = new Intl.DateTimeFormat(requestedLanguage === "ur" ? "ur-PK" : "en-PK", { dateStyle: "medium" }).format(new Date(`${effectiveDate}T12:00:00`));
         dateEl.setAttribute("datetime", effectiveDate);
       }
-      grid.innerHTML = posts.length ? posts.map((post, index) => `<article class="news-card"><span class="rank">0${index + 1}</span><span class="category">${escape(post.category)}</span><h3${state.language === "ur" ? ' dir="rtl" lang="ur"' : ""}>${escape(state.language === "ur" ? post.title_ur : post.title_en)}</h3><p${state.language === "ur" ? ' dir="rtl" lang="ur"' : ""}>${escape(state.language === "ur" ? post.excerpt_ur : post.excerpt_en)}</p></article>`).join("") : '<div class="loading-card">The owner has not published today’s five stories yet.</div>';
-    } catch (error) { grid.innerHTML = `<div class="loading-card error">${escape(error.message)} Please check the deployment settings.</div>`; }
+      grid.innerHTML = posts.length ? posts.map((post, index) => `<article class="news-card"><span class="rank">0${index + 1}</span><span class="category">${escape(post.category)}</span><h3${requestedLanguage === "ur" ? ' dir="rtl" lang="ur"' : ""}>${escape(requestedLanguage === "ur" ? post.title_ur : post.title_en)}</h3><p${requestedLanguage === "ur" ? ' dir="rtl" lang="ur"' : ""}>${escape(requestedLanguage === "ur" ? post.excerpt_ur : post.excerpt_en)}</p></article>`).join("") : '<div class="loading-card">The owner has not published today’s five stories yet.</div>';
+    } catch (error) {
+      if (requestedLanguage !== state.language) return;
+      grid.innerHTML = `<div class="loading-card error">${escape(error.message)} Please check the deployment settings.</div>`;
+    }
   }
   function openModal(html) { const root = $("#modalRoot"); root.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><button class="close" aria-label="Close">×</button>${html}</div>`; root.classList.remove("hidden"); root.setAttribute("aria-hidden", "false"); root.querySelector(".close").onclick = closeModal; }
   function closeModal() { const root = $("#modalRoot"); root.classList.add("hidden"); root.setAttribute("aria-hidden", "true"); root.innerHTML = ""; }
