@@ -121,7 +121,7 @@ async function loadPremiumEdition(date) {
     renderPremiumCards(cached.posts || [], lang);
     const newsDate = qs('#newsDate');
     if (newsDate) newsDate.textContent = formatDate(cached.date || date, lang);
-    syncPremiumPager(cached.availableDates?.length ? cached.availableDates : [], cached.date || date);
+    syncPremiumPager();
     window.scrollTo({ top: scrollY, behavior:'auto' });
   } else {
     showEditionLoading(grid);
@@ -137,7 +137,7 @@ async function loadPremiumEdition(date) {
     if (newsDate) newsDate.textContent = formatDate(data.date || date, lang);
     const currentPager = qs('#premiumNewsPager');
     const existingDates = currentPager ? [...currentPager.querySelectorAll('[data-premium-date]')].map(b => b.dataset.premiumDate) : [];
-    syncPremiumPager(existingDates, data.date || date);
+    syncPremiumPager();
     window.scrollTo({ top: scrollY, behavior:'auto' });
   } catch {
     if (requestId === editionLoadSeq) {
@@ -149,45 +149,13 @@ async function loadPremiumEdition(date) {
   }
 }
 
-function syncPremiumPager(availableDates, activeDate) {
-  const premium = qs('#premiumMode');
-  const grid = qs('#premiumGrid');
-  if (!premium || !grid) return;
-  let pager = qs('#premiumNewsPager');
-  if (!pager) {
-    pager = document.createElement('nav');
-    pager.id = 'premiumNewsPager';
-    pager.className = 'news-pager premium-news-pager';
-    pager.setAttribute('aria-label', 'News editions');
-    grid.parentNode.insertBefore(pager, grid);
-  } else if (pager.parentNode !== grid.parentNode || pager.nextElementSibling !== grid) {
-    grid.parentNode.insertBefore(pager, grid);
-  }
-  const dates = [...new Set((Array.isArray(availableDates) ? availableDates : []).filter(Boolean))];
-  if (!dates.length) {
-    pager.innerHTML = '<button type="button" class="news-page retry-editions" id="retryPremiumEditions" aria-label="Retry loading news editions"><span>↻</span><small>Retry editions</small></button>';
-    const retry = pager.querySelector('#retryPremiumEditions');
-    if (retry) retry.addEventListener('click', initialPremiumPager, { once:true });
-    return;
-  }
-  const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
-  pager.innerHTML = dates.map((date, i) => `<button type="button" class="news-page${date === activeDate ? ' active' : ''}" data-premium-date="${String(date).replace(/\"/g,'&quot;')}" aria-label="News edition ${i + 1}, ${formatDate(date, lang)}" aria-current="${date === activeDate ? 'page' : 'false'}"><span>${i + 1}</span><small>${formatDate(date, lang)}</small></button>`).join('');
-  pager.querySelectorAll('[data-premium-date]').forEach(btn => btn.addEventListener('click', () => loadPremiumEdition(btn.dataset.premiumDate)));
+function syncPremiumPager();
+  if (old) old.remove();
 }
 
 async function initialPremiumPager() {
-  if (premiumPagerInitialized) return;
   premiumPagerInitialized = true;
-  try {
-    const lang = document.documentElement.lang === 'ur' ? 'ur' : 'en';
-    const r = await fetch(`/api/news?lang=${encodeURIComponent(lang)}&includeDates=1`, { cache:'no-store' });
-    const data = await r.json();
-    if (!r.ok) return;
-    editionCache.set(`${lang}:${data.date}`, data);
-    syncPremiumPager(data.availableDates || [], data.date);
-  } catch {
-    premiumPagerInitialized = false;
-  }
+  syncPremiumPager();
 }
 
 function loadManagementAndOpen() {
