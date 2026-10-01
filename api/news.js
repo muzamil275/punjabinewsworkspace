@@ -51,7 +51,10 @@ function pickLiveImage(post) {
 }
 
 function normalizeImages(posts) {
-  return (Array.isArray(posts) ? posts : []).map(post => ({...post,image_url:`/api/news-image?id=${encodeURIComponent(post.id)}`}));
+  return (Array.isArray(posts) ? posts : []).map(post => ({
+    ...post,
+    image_url: /^https:\/\//i.test(String(post.image_url || '')) ? post.image_url : pickLiveImage(post)
+  }));
 }
 
 module.exports = async (req, res) => {
