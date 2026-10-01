@@ -70,7 +70,7 @@ function renderPremiumCards(posts, lang) {
     grid.innerHTML = '<div class="premium-gate"><span class="premium-gate-kicker">Edition unavailable</span><h3>No stories for this edition.</h3><p>Please choose another date from the editions below.</p></div>';
     return;
   }
-  grid.innerHTML = cards.map((p, index) => {
+  grid.innerHTML = cards.slice(0,5).map((p, index) => {
     const title = lang === 'ur' ? p.title_ur : p.title_en;
     const text = lang === 'ur' ? p.excerpt_ur : p.excerpt_en;
     const source = p.source_url && p.source_name
@@ -149,8 +149,7 @@ async function loadPremiumEdition(date) {
   }
 }
 
-function syncPremiumPager();
-  if (old) old.remove();
+function syncPremiumPager(){const old=document.querySelector('#premiumNewsPager,.premium-news-pager');if(old)old.remove();}
 }
 
 async function initialPremiumPager() {
