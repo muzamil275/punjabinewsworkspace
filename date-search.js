@@ -88,40 +88,43 @@
     else setTimeout(run, 500);
   }
 
-  async function setup() {
-    styles();
-    setupGuardWhenReady();
-    const pager = q('#newsPager');
-    if (!pager || q('#pnwDateSearch')) return;
-    let dates = [];
+  async function getDates() {
     try {
       const r = await fetch(`/api/news?lang=${encodeURIComponent(lang())}&includeDates=1`, { cache: 'no-store' });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) return;
-      dates = Array.isArray(d.availableDates) ? d.availableDates : [];
-    } catch { return; }
+      if (!r.ok) return [];
+      return Array.isArray(d.availableDates) ? d.availableDates : [];
+    } catch { return []; }
+  }
 
+  function makeControls(id, premium = false) {
+    if (q(id)) return;
+    const target = premium ? q('#premiumGrid') : q('#newsGrid');
+    if (!target) return;
     const wrap = document.createElement('div');
-    wrap.id = 'pnwDateSearch';
+    wrap.id = id.slice(1);
     wrap.className = 'date-search-controls';
-    wrap.innerHTML = `<label>${lang() === 'ur' ? 'تاریخ' : 'Date'}<input id="pnwDateInput" type="date"></label><label>${lang() === 'ur' ? 'محفوظ شدہ ایڈیشن' : 'Available editions'}<select id="pnwDateSelect"><option value="">${lang() === 'ur' ? 'تاریخ منتخب کریں' : 'Select a date'}</option>${dates.map(d => `<option value="${esc(d)}">${esc(formatDate(d))}</option>`).join('')}</select></label><button id="pnwDateSearchButton" class="secondary" type="button">${lang() === 'ur' ? 'تلاش' : 'Search'}</button>`;
-    pager.parentNode.insertBefore(wrap, pager.nextSibling);
-
-    const input = q('#pnwDateInput');
-    const select = q('#pnwDateSelect');
-    const button = q('#pnwDateSearchButton');
+    wrap.innerHTML = `<label>${lang() === 'ur' ? 'تاریخ' : 'Date'}<input type="date"></label><label>${lang() === 'ur' ? 'محفوظ شدہ ایڈیشن' : 'Available editions'}<select><option value="">${lang() === 'ur' ? 'تاریخ منتخب کریں' : 'Select a date'}</option></select></label><button class="secondary" type="button">${lang() === 'ur' ? 'تلاش' : 'Search'}</button>`;
+    target.parentNode.insertBefore(wrap, target);
+    const input = wrap.querySelector('input'), select = wrap.querySelector('select'), button = wrap.querySelector('button');
+    getDates().then(dates => {
+      select.innerHTML = `<option value="">${lang() === 'ur' ? 'تاریخ منتخب کریں' : 'Select a date'}</option>${dates.map(d => `<option value="${esc(d)}">${esc(formatDate(d))}</option>`).join('')}`;
+    });
     input.addEventListener('change', () => { select.value = input.value; });
     select.addEventListener('change', () => { input.value = select.value; });
     button.addEventListener('click', () => {
       const date = input.value || select.value;
       if (!date) return;
-      const existing = document.querySelector(`[data-news-date="${CSS.escape(date)}"]`);
-      if (existing) {
-        existing.click();
-      } else {
-        fetchEdition(date);
-      }
+      if (premium) window.dispatchEvent(new CustomEvent('pnw:premium-date-search', { detail: { date } }));
+      else fetchEdition(date);
     });
+  }
+
+  function setup() {
+    styles();
+    setupGuardWhenReady();
+    makeControls('#pnwDateSearch', false);
+    makeControls('#pnwPremiumDateSearch', true);
   }
 
   function init() {
