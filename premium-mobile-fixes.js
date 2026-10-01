@@ -199,6 +199,10 @@ function installPremiumInteractionGuard() {
 function start() {
   installPremiumFixes();
   installPremiumInteractionGuard();
+  window.addEventListener('pnw:premium-date-search', event => {
+    const date = event.detail?.date;
+    if (date) loadPremiumEdition(date);
+  });
   initialPremiumPager();
 }
 
