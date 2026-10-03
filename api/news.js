@@ -53,7 +53,11 @@ function pickLiveImage(post) {
 function normalizeImages(posts) {
   return (Array.isArray(posts) ? posts : []).map(post => ({
     ...post,
-    image_url: /^https:\/\//i.test(String(post.image_url || '')) ? post.image_url : pickLiveImage(post)
+    // Always use the story-specific renderer so stale database images cannot
+    // show an unrelated stock photo for a different story.
+    image_url: /^\d+$/.test(String(post.id || ''))
+      ? `/api/news-image?id=${encodeURIComponent(post.id)}`
+      : pickLiveImage(post)
   }));
 }
 
