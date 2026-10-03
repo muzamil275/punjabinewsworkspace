@@ -8,19 +8,44 @@ module.exports = async (req, res) => {
     if (req.method === 'PATCH') {
       const action = req.body?.action; if (!['approve','reject'].includes(action)) return json(res,{error:'Invalid review action.'},422);
       const found = await supabaseFetch(`payments?id=eq.${encodeURIComponent(id)}&select=id,user_id,status&limit=1`,{authHeader}); const payment = found.ok ? (await dbJson(found))[0] : null; if (!payment || payment.status !== 'pending') return json(res,{error:'This payment cannot be reviewed.'},404);
-      const status = action === 'approve' ? 'approved' : 'rejected';
       const reviewedAt = new Date().toISOString();
-      const updated = await supabaseFetch(`payments?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({status,reviewed_at:reviewedAt,reviewed_by:user.id})}); if(!updated.ok) return json(res,{error:'Could not update payment.'},503);
-      const existing = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(payment.user_id)}&select=id&limit=1`,{authHeader}); const rows = existing.ok ? await dbJson(existing) : [];
-      let ends = null; if(action==='approve'){ const prior=await supabaseFetch(`payments?user_id=eq.${encodeURIComponent(payment.user_id)}&status=eq.approved&id=neq.${encodeURIComponent(id)}&select=id&limit=1`,{authHeader}); const months=prior.ok && (await dbJson(prior)).length===0?2:1; ends=new Date(); ends.setMonth(ends.getMonth()+months); }
-      const body={plan:'premium',status:action==='approve'?'active':'rejected',access_ends_at:ends?ends.toISOString():null,updated_at:new Date().toISOString()};
-      const sub = rows.length ? await supabaseFetch(`subscriptions?id=eq.${encodeURIComponent(rows[0].id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify(body)}) : await supabaseFetch('subscriptions',{method:'POST',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:payment.user_id,...body})});
-      if(!sub.ok){
-        const rollback = await supabaseFetch(`payments?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'pending',reviewed_at:null,reviewed_by:null})});
-        if(!rollback.ok) return json(res,{error:'Payment and subscription update both failed; manual review required.'},503);
-        return json(res,{error:'Subscription update failed; payment review was rolled back.'},503);
+      const existing = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(payment.user_id)}&select=id,status,access_ends_at&limit=1`,{authHeader});
+      const rows = existing.ok ? await dbJson(existing) : [];
+
+      if (action === 'reject') {
+        const updated = await supabaseFetch(`payments?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'rejected',reviewed_at:reviewedAt,reviewed_by:user.id})});
+        if (!updated.ok) return json(res,{error:'Could not reject payment.'},503);
+        const currentSub = rows[0];
+        if (currentSub && currentSub.status === 'pending') {
+          const sub = await supabaseFetch(`subscriptions?id=eq.${encodeURIComponent(currentSub.id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'expired',access_ends_at:reviewedAt,updated_at:reviewedAt})});
+          if (!sub.ok) return json(res,{ok:true,status:'rejected',warning:'Payment was rejected, but the old pending subscription record could not be cleared.'});
+        }
+        return json(res,{ok:true,status:'rejected'});
       }
-      return json(res,{ok:true,status});
+
+      const prior=await supabaseFetch(`payments?user_id=eq.${encodeURIComponent(payment.user_id)}&status=eq.approved&id=neq.${encodeURIComponent(id)}&select=id&limit=1`,{authHeader});
+      const months=prior.ok && (await dbJson(prior)).length===0?2:1;
+      const now = new Date();
+      const currentSub = rows[0] || null;
+      if (currentSub && ['active','provisional','cancelled'].includes(currentSub.status) && currentSub.access_ends_at && new Date(currentSub.access_ends_at).getTime() > now.getTime()) {
+        return json(res,{error:'This user already has unexpired Premium access.'},409);
+      }
+      const ends=new Date(now);
+      ends.setMonth(ends.getMonth()+months);
+      const body={plan:'premium',status:'active',access_ends_at:ends.toISOString(),updated_at:now.toISOString()};
+      const sub = currentSub
+        ? await supabaseFetch(`subscriptions?id=eq.${encodeURIComponent(currentSub.id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify(body)})
+        : await supabaseFetch('subscriptions',{method:'POST',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:payment.user_id,...body})});
+      if(!sub.ok) return json(res,{error:'Could not activate Premium for this user.'},503);
+
+      const updated = await supabaseFetch(`payments?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'approved',reviewed_at:reviewedAt,reviewed_by:user.id})});
+      if(!updated.ok){
+        if(currentSub) await supabaseFetch(`subscriptions?id=eq.${encodeURIComponent(currentSub.id)}`,{method:'PATCH',authHeader,headers:{Prefer:'return=minimal'},body:JSON.stringify({status:currentSub.status,access_ends_at:currentSub.access_ends_at,updated_at:reviewedAt})});
+        else await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(payment.user_id)}&status=eq.active&access_ends_at=eq.${encodeURIComponent(ends.toISOString())}`,{method:'DELETE',authHeader});
+        return json(res,{error:'Payment review could not be finalized. Please refresh the queue and try again.'},503);
+      }
+      return json(res,{ok:true,status:'approved',subscription:{plan:'premium',status:'active',access_ends_at:ends.toISOString(),months}});
+
     }
     if(req.method==='GET'){
       const found=await supabaseFetch(`payments?id=eq.${encodeURIComponent(id)}&select=proof_path&limit=1`,{authHeader}); const payment=found.ok?(await dbJson(found))[0]:null; if(!payment?.proof_path)return json(res,{error:'Proof not found.'},404); const env=getEnv(); const path=String(payment.proof_path).split('/').map(encodeURIComponent).join('/'); const file=await fetch(`${env.SUPABASE_URL}/storage/v1/object/payment-proofs/${path}`,{headers:{apikey:env.SUPABASE_KEY,Authorization:authHeader}}); if(!file.ok)return json(res,{error:'Proof file not found.'},404); res.statusCode=200; res.setHeader('Content-Type',file.headers.get('content-type')||'application/octet-stream'); res.setHeader('Content-Disposition','inline'); return res.end(Buffer.from(await file.arrayBuffer()));
