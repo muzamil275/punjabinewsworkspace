@@ -30,7 +30,7 @@ function pickLiveImage(post) {
   const text = `${post.title_en || ''} ${post.title_ur || ''} ${post.excerpt_en || ''} ${post.category || ''}`.toLowerCase();
   if (/apni chhat|apna ghar|housing|house|home|housing project|گھر|مکان/.test(text)) return LIVE_IMAGES.housing;
   if (/ufone|onic|telecom|5g|sim|e?sim|mobile network|ptcl|یوفون|اونک|ٹیلی کام|موبائل/.test(text)) return LIVE_IMAGES.telecom;
-  if (/car sales|cars|automotive|vehicle|vehicles|auto policy|گاڑی|کار|آٹو/.test(text)) return LIVE_IMAGES.automotive;
+  if (/car sales|cars|automotive|vehicle|vehicles|auto policy|گاڑی|آٹو/.test(text)) return LIVE_IMAGES.automotive;
   if (/sugar|wheat|food security|agriculture|چینی|گندم|زراعت|خوراک/.test(text)) return LIVE_IMAGES.food;
   if (/public firms|state-owned|soes|profit-making|loss-making|سرکاری ادارے|منافع|خسارہ/.test(text)) return LIVE_IMAGES.finance;
   if (/psx|stock market|shares|investor|trading|kse|remittance|ترسیلات|اسٹاک|سرمایہ کار|شیئر/.test(text)) return LIVE_IMAGES.finance;
