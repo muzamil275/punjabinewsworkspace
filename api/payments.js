@@ -33,16 +33,6 @@ module.exports = async (req, res) => {
         return json(res, { error: 'Could not save your payment submission. Your proof was not kept. Please try again.' }, 503);
       }
       const paymentId = paymentRows?.[0]?.id;
-      const existingSub = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=id&limit=1`, { authHeader }); const rows = existingSub.ok ? await dbJson(existingSub) : [];
-      const subBody = { plan:'premium', status:'pending', access_ends_at:null, updated_at:new Date().toISOString() };
-      const sub = rows.length
-        ? await supabaseFetch(`subscriptions?id=eq.${encodeURIComponent(rows[0].id)}`, { method:'PATCH', authHeader, headers:{Prefer:'return=minimal'}, body:JSON.stringify(subBody) })
-        : await supabaseFetch('subscriptions', { method:'POST', authHeader, headers:{Prefer:'return=minimal'}, body:JSON.stringify({user_id:user.id,...subBody}) });
-      if (!sub.ok) {
-        if (paymentId) await supabaseFetch(`payments?id=eq.${encodeURIComponent(paymentId)}`, { method:'PATCH', authHeader, headers:{Prefer:'return=minimal'}, body:JSON.stringify({ status:'rejected', reviewed_at:null, reviewed_by:null }) });
-        try { await deleteProof(objectKey, authHeader); } catch {}
-        return json(res, { error: 'Could not create the Premium subscription record. Your payment submission was rolled back; please try again.' }, 503);
-      }
       return json(res, { message: 'Payment proof submitted. Premium will be activated after owner verification.' }, 201);
     } catch (error) {
       return json(res, { error: error.message || 'Payment submission failed. Please try again.' }, 500);
