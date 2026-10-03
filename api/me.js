@@ -5,8 +5,10 @@ module.exports = async (req, res) => {
     const user = await requireUser(req, res); if (!user) return; const owner = isOwner(user);
     const r = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=plan,status,access_ends_at&limit=1`, { authHeader: req.headers.authorization || '' });
     const rows = r.ok ? await dbJson(r) : []; const sub = rows[0] || null;
+    const pendingRes = await supabaseFetch(`payments?user_id=eq.${encodeURIComponent(user.id)}&status=eq.pending&select=id&limit=1`, { authHeader: req.headers.authorization || '' });
+    const pendingPayment = pendingRes.ok && (await dbJson(pendingRes)).length > 0;
     const accessStatuses = ['provisional','active','cancelled'];
     const active = owner || Boolean(sub && accessStatuses.includes(sub.status) && sub.access_ends_at && new Date(sub.access_ends_at).getTime() > Date.now());
-    return json(res, { user: { id:user.id, email:user.email||null, phone:user.phone||null, isAdmin:owner, isOwner:owner }, subscription: owner ? { plan:'premium', status:'active', access_ends_at:null, active:true, owner:true } : (sub ? { ...sub, active } : null) });
+    return json(res, { user: { id:user.id, email:user.email||null, phone:user.phone||null, isAdmin:owner, isOwner:owner }, pendingPayment, subscription: owner ? { plan:'premium', status:'active', access_ends_at:null, active:true, owner:true } : (sub ? { ...sub, active } : null) });
   } catch (e) { return json(res, { error:e.message || 'Account request failed.' }, 500); }
 };
