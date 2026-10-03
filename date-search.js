@@ -5,6 +5,12 @@
   const esc = v => String(v ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
   const lang = () => document.documentElement.lang === 'ur' ? 'ur' : 'en';
   const formatDate = d => new Date(`${d}T12:00:00`).toLocaleDateString(lang() === 'ur' ? 'ur-PK' : 'en-PK', { dateStyle: 'medium' });
+  const validCalendarDate = value => {
+    const m = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(value || ''));
+    if (!m) return false;
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+    return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]);
+  };
 
   function styles() {
     if (q('#dateSearchStyles')) return;
@@ -20,7 +26,7 @@
     const grid = q('#newsGrid');
     const requestLang = lang();
     const requestSeq = ++editionRequestSeq;
-    if (!grid || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    if (!grid || !validCalendarDate(date)) return;
     grid.setAttribute('aria-busy', 'true');
     grid.innerHTML = '<article class="loading-card skeleton-card"><span></span><span></span><span></span></article>';
     try {
@@ -120,6 +126,12 @@
     button.addEventListener('click', () => {
       const date = input.value || select.value;
       if (!date) return;
+      if (!validCalendarDate(date)) {
+        input.setCustomValidity(lang() === 'ur' ? 'درست کیلنڈر تاریخ منتخب کریں۔' : 'Please select a valid calendar date.');
+        input.reportValidity();
+        return;
+      }
+      input.setCustomValidity('');
       if (premium) window.dispatchEvent(new CustomEvent('pnw:premium-date-search', { detail: { date } }));
       else fetchEdition(date);
     });
