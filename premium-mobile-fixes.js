@@ -93,8 +93,7 @@ function showEditionLoading(grid) {
 function renderPremiumPreview() {
   const grid = qs('#premiumGrid');
   if (!grid) return;
-  grid.innerHTML = \
-    '<div class="premium-gate premium-preview-gate">' +
+  grid.innerHTML = '<div class="premium-gate premium-preview-gate">' +
     '<span class="premium-gate-kicker">PREMIUM PREVIEW</span>' +
     '<h3>See what Premium adds.</h3>' +
     '<p>Premium news is available here only while your Premium access is active.</p>' +
