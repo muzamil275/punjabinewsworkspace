@@ -6,7 +6,7 @@
   const lang = () => document.documentElement.lang === 'ur' ? 'ur' : 'en';
   const formatDate = d => new Date(`${d}T12:00:00`).toLocaleDateString(lang() === 'ur' ? 'ur-PK' : 'en-PK', { dateStyle: 'medium' });
   const validCalendarDate = value => {
-    const m = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(value || ''));
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
     if (!m) return false;
     const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
     return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]);
@@ -16,7 +16,7 @@
     if (q('#dateSearchStyles')) return;
     const s = document.createElement('style');
     s.id = 'dateSearchStyles';
-    s.textContent = `.date-search-controls{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;width:100%;margin:0 0 18px}.date-search-controls label{display:flex;flex-direction:column;gap:5px;font-size:.72rem;font-weight:800;opacity:.75}.date-search-controls input,.date-search-controls select{height:42px;border:1px solid rgba(127,120,109,.22);border-radius:12px;padding:0 11px;background:transparent;color:inherit;font:inherit;min-width:150px}.date-search-controls button{height:42px;white-space:nowrap}.main-nav .text-button{transform:translateY(-2px)}#newsGrid .news-card{user-select:text;-webkit-user-select:text}@media(max-width:600px){.date-search-controls{align-items:stretch}.date-search-controls label{flex:1;min-width:140px}.date-search-controls input,.date-search-controls select{width:100%;min-width:0}.date-search-controls button{width:100%}}`;
+    s.textContent = `.date-search-controls{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;width:100%;margin:0 0 18px}.date-search-controls .date-search-custom,.date-search-controls .date-search-available{display:flex;align-items:flex-end;gap:8px}.date-search-controls label{display:flex;flex-direction:column;gap:5px;font-size:.72rem;font-weight:800;opacity:.75}.date-search-controls input,.date-search-controls select{height:42px;border:1px solid rgba(127,120,109,.22);border-radius:12px;padding:0 11px;background:transparent;color:inherit;font:inherit;min-width:150px}.date-search-controls button{height:42px;white-space:nowrap}.main-nav .text-button{transform:translateY(-2px)}#newsGrid .news-card{user-select:text;-webkit-user-select:text}@media(max-width:600px){.date-search-controls{align-items:stretch}.date-search-controls .date-search-custom,.date-search-controls .date-search-available{width:100%;align-items:stretch}.date-search-controls label{flex:1;min-width:140px}.date-search-controls input,.date-search-controls select{width:100%;min-width:0}.date-search-controls button{width:100%}}`;
     document.head.appendChild(s);
   }
 
@@ -108,6 +108,17 @@
     } catch { return []; }
   }
 
+  function pakistanToday() {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Karachi',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  }
+
+  const MIN_EDITION_DATE = '2026-09-04';
+
   function makeControls(id, premium = false) {
     if (q(id)) return;
     const target = premium ? q('#premiumGrid') : q('#newsGrid');
@@ -115,25 +126,44 @@
     const wrap = document.createElement('div');
     wrap.id = id.slice(1);
     wrap.className = 'date-search-controls';
-    wrap.innerHTML = `<label>${lang() === 'ur' ? 'تاریخ' : 'Date'}<input type="date"></label><label>${lang() === 'ur' ? 'محفوظ شدہ ایڈیشن' : 'Available editions'}<select><option value="">${lang() === 'ur' ? 'تاریخ منتخب کریں' : 'Select a date'}</option></select></label><button class="secondary" type="button">${lang() === 'ur' ? 'تلاش' : 'Search'}</button>`;
+    const dateLabel = lang() === 'ur' ? 'حسبِ منشا تاریخ' : 'Custom date';
+    const editionsLabel = lang() === 'ur' ? 'دستیاب ایڈیشنز' : 'Available editions';
+    const selectPrompt = lang() === 'ur' ? 'ایڈیشن منتخب کریں' : 'Select an edition';
+    const searchLabel = lang() === 'ur' ? 'تلاش' : 'Search';
+    wrap.innerHTML =
+      `<div class="date-search-custom"><label>${dateLabel}<input type="date" min="${MIN_EDITION_DATE}" max="${pakistanToday()}" aria-label="${dateLabel}"></label><button class="secondary" type="button" data-date-custom-search>${searchLabel}</button></div>` +
+      `<div class="date-search-available"><label>${editionsLabel}<select aria-label="${editionsLabel}"><option value="">${selectPrompt}</option></select></label><button class="secondary" type="button" data-date-available-search>${searchLabel}</button></div>`;
     target.parentNode.insertBefore(wrap, target);
-    const input = wrap.querySelector('input'), select = wrap.querySelector('select'), button = wrap.querySelector('button');
+    const input = wrap.querySelector('input'), select = wrap.querySelector('select');
+    const customButton = wrap.querySelector('[data-date-custom-search]');
+    const availableButton = wrap.querySelector('[data-date-available-search]');
+    const minDate = MIN_EDITION_DATE;
+    const maxDate = pakistanToday();
+
     getDates().then(dates => {
-      select.innerHTML = `<option value="">${lang() === 'ur' ? 'تاریخ منتخب کریں' : 'Select a date'}</option>${dates.map(d => `<option value="${esc(d)}">${esc(formatDate(d))}</option>`).join('')}`;
+      const usableDates = dates.filter(d => validCalendarDate(d) && d >= minDate && d <= maxDate);
+      select.innerHTML = `<option value="">${selectPrompt}</option>${usableDates.map(d => `<option value="${esc(d)}">${esc(formatDate(d))}</option>`).join('')}`;
     });
-    input.addEventListener('change', () => { select.value = input.value; });
-    select.addEventListener('change', () => { input.value = select.value; });
-    button.addEventListener('click', () => {
-      const date = input.value || select.value;
+
+    const searchDate = date => {
       if (!date) return;
-      if (!validCalendarDate(date)) {
-        input.setCustomValidity(lang() === 'ur' ? 'درست کیلنڈر تاریخ منتخب کریں۔' : 'Please select a valid calendar date.');
+      if (!validCalendarDate(date) || date < minDate || date > maxDate) {
+        input.setCustomValidity(lang() === 'ur'
+          ? 'صرف 4 ستمبر 2026 سے آج تک کی تاریخ منتخب کریں۔'
+          : 'Please select a date from 4 September 2026 through today.');
         input.reportValidity();
         return;
       }
       input.setCustomValidity('');
       if (premium) window.dispatchEvent(new CustomEvent('pnw:premium-date-search', { detail: { date } }));
       else fetchEdition(date);
+    };
+
+    customButton.addEventListener('click', () => searchDate(input.value));
+    availableButton.addEventListener('click', () => {
+      const date = select.value;
+      if (!date) return;
+      searchDate(date);
     });
   }
 
