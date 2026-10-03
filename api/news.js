@@ -71,7 +71,17 @@ module.exports = async (req, res) => {
     const today = karachiDate();
     const hasExplicitDate = Boolean(req.query?.date);
     const requestedDate = String(req.query?.date || today);
-    const targetDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) ? requestedDate : today;
+    const datePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const dateMatch = datePattern.exec(requestedDate);
+    if (hasExplicitDate) {
+      if (!dateMatch) return json(res, { error: 'Invalid date. Use YYYY-MM-DD.' }, 400);
+      const year = Number(dateMatch[1]), month = Number(dateMatch[2]), day = Number(dateMatch[3]);
+      const parsed = new Date(Date.UTC(year, month - 1, day));
+      if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+        return json(res, { error: 'Invalid calendar date.' }, 400);
+      }
+    }
+    const targetDate = hasExplicitDate ? requestedDate : today;
     const select = 'id,category,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on,daily_rank,updated_at';
     let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
     let data = await dbJson(r);
@@ -79,21 +89,45 @@ module.exports = async (req, res) => {
     if (!Array.isArray(data)) data = [];
     let effectiveDate = targetDate;
     if (!hasExplicitDate && data.length !== 5) {
-      const latestResponse = await supabaseFetch(`news_posts?is_published=eq.true&select=${select}&order=published_on.desc,daily_rank.asc&limit=5`);
-      const latestRows = await dbJson(latestResponse);
-      if (latestResponse.ok && Array.isArray(latestRows) && latestRows.length === 5 && latestRows[0]?.published_on) {
-        data = latestRows;
-        effectiveDate = latestRows[0].published_on;
-      } else {
-        data = [];
+      const latestDatesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on,daily_rank&order=published_on.desc&limit=1000');
+      const latestDateRows = await dbJson(latestDatesResponse);
+      const completeDates = new Set();
+      if (latestDatesResponse.ok && Array.isArray(latestDateRows)) {
+        const ranksByDate = new Map();
+        for (const row of latestDateRows) {
+          if (!row?.published_on || row.daily_rank == null) continue;
+          if (!ranksByDate.has(row.published_on)) ranksByDate.set(row.published_on, new Set());
+          ranksByDate.get(row.published_on).add(Number(row.daily_rank));
+        }
+        for (const [date, ranks] of ranksByDate) if (ranks.size === 5 && [1,2,3,4,5].every(rank => ranks.has(rank))) completeDates.add(date);
       }
+      const latestCompleteDate = [...completeDates].sort().at(-1);
+      if (latestCompleteDate) {
+        const latestResponse = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(latestCompleteDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
+        const latestRows = await dbJson(latestResponse);
+        if (latestResponse.ok && Array.isArray(latestRows) && latestRows.length === 5) {
+          data = latestRows;
+          effectiveDate = latestCompleteDate;
+        } else data = [];
+      } else data = [];
     }
     const includeDates = String(req.query?.includeDates ?? '1') !== '0';
     let availableDates = [];
     if (includeDates) {
       const datesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on&order=published_on.desc&limit=1000');
       const dateRows = await dbJson(datesResponse);
-      availableDates = Array.isArray(dateRows) ? [...new Set(dateRows.map(x => x.published_on).filter(Boolean))] : [];
+      if (Array.isArray(dateRows)) {
+        const ranksByDate = new Map();
+        for (const row of dateRows) {
+          if (!row?.published_on || row.daily_rank == null) continue;
+          if (!ranksByDate.has(row.published_on)) ranksByDate.set(row.published_on, new Set());
+          ranksByDate.get(row.published_on).add(Number(row.daily_rank));
+        }
+        availableDates = [...ranksByDate.entries()]
+          .filter(([, ranks]) => ranks.size === 5 && [1,2,3,4,5].every(rank => ranks.has(rank)))
+          .map(([date]) => date)
+          .sort((a, b) => b.localeCompare(a));
+      }
     }
     return json(res, {posts:normalizeImages(data),date:effectiveDate,requestedDate:targetDate,isLatestAvailable:effectiveDate!==targetDate,availableDates,language:req.query?.lang==='ur'?'ur':'en'});
   } catch (e) {
