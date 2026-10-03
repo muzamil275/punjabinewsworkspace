@@ -51,12 +51,19 @@ function pickLiveImage(post) {
 }
 
 function normalizeImages(posts) {
-  return (Array.isArray(posts) ? posts : []).map(post => ({
-    ...post,
-    // Keep the existing CDN image system so images load reliably.
-    // Matching is based on the story headline/category, not a stale DB image.
-    image_url: pickLiveImage(post)
-  }));
+  return (Array.isArray(posts) ? posts : []).map(post => {
+    const storedImage = String(post.image_url || '').trim();
+    const generatedImage = /^\d+$/.test(String(post.id || ''))
+      ? `/api/news-image?id=${encodeURIComponent(post.id)}`
+      : '';
+    return {
+      ...post,
+      // Prefer a story-specific stored/generated image so the same category photo
+      // is not reused across every fuel, security, sports, etc. story.
+      // Fall back to the curated category image only when no story image exists.
+      image_url: storedImage || generatedImage || pickLiveImage(post)
+    };
+  });
 }
 
 module.exports = async (req, res) => {
