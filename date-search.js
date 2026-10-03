@@ -14,15 +14,20 @@
     document.head.appendChild(s);
   }
 
+  let editionRequestSeq = 0;
+
   async function fetchEdition(date) {
     const grid = q('#newsGrid');
+    const requestLang = lang();
+    const requestSeq = ++editionRequestSeq;
     if (!grid || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
     grid.setAttribute('aria-busy', 'true');
     grid.innerHTML = '<article class="loading-card skeleton-card"><span></span><span></span><span></span></article>';
     try {
-      const r = await fetch(`/api/news?lang=${encodeURIComponent(lang())}&date=${encodeURIComponent(date)}`, { cache: 'no-store' });
+      const r = await fetch(`/api/news?lang=${encodeURIComponent(requestLang)}&date=${encodeURIComponent(date)}`, { cache: 'no-store' });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'News request failed.');
+      if (requestSeq !== editionRequestSeq || requestLang !== lang()) return;
       const posts = Array.isArray(d.posts) ? d.posts : [];
       const actualDate = d.date || date;
       const dateEl = q('#newsDate');
@@ -33,8 +38,8 @@
         grid.innerHTML = '<div class="loading-card">No stories were published for this date.</div>';
       } else {
         grid.innerHTML = posts.map(p => {
-          const title = lang() === 'ur' ? p.title_ur : p.title_en;
-          const text = lang() === 'ur' ? p.excerpt_ur : p.excerpt_en;
+          const title = requestLang === 'ur' ? p.title_ur : p.title_en;
+          const text = requestLang === 'ur' ? p.excerpt_ur : p.excerpt_en;
           const source = p.source_url && p.source_name ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>` : esc(p.source_name || '');
           const image = p.image_url ? `<div class="news-image-wrap"><img src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>` : '';
           return `<article class="news-card"><div class="news-image-wrap">${image ? image.replace('<div class="news-image-wrap">','').replace('</div>','') : ''}</div><div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(formatDate(p.published_on))}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div></article>`;
