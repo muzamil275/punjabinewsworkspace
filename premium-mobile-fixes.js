@@ -78,7 +78,7 @@ function renderPremiumCards(posts, lang) {
       : (p.source_name ? String(p.source_name) : '');
     const loading = index < 2 ? 'eager' : 'lazy';
     const priority = index < 2 ? ' fetchpriority="high"' : '';
-    const image = p.image_url ? `<img src="${String(p.image_url).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;')}" alt="" loading="${loading}" decoding="async"${priority}>` : '';
+    const image = p.image_url ? `<img src="${String(p.image_url).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;')}" alt="${safeTitle}" loading="${loading}" decoding="async"${priority}>` : '';
     const safeTitle = String(title ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
     const safeText = String(text ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
     const safeCategory = String(p.category ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
