@@ -28,7 +28,7 @@ function installPremiumFixes() {
     body[data-mode="premium"] .premium-mode .gemini-head .muted,
     body[data-mode="premium"] .premium-mode .gemini-form textarea,
     body[data-mode="premium"] .premium-mode .gemini-actions{max-width:100%;min-width:0;overflow-wrap:anywhere;word-break:normal;}
-    body[data-mode="premium"] .premium-mode .premium-grid{width:100%;max-width:100%;margin-left:auto;margin-right:auto;}
+    body[data-mode="premium"] .premium-mode{width:100%;max-width:100%;box-sizing:border-box;}body[data-mode="premium"] .premium-mode .premium-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;max-width:100%;margin-left:auto;margin-right:auto;}body[data-mode="premium"] .premium-mode .premium-card{grid-column:span 1;box-sizing:border-box;}
     body[data-mode="premium"] .premium-mode .premium-card{min-width:0;max-width:100%;}
     body[data-mode="premium"] .premium-mode .premium-card h3{overflow-wrap:anywhere;}
     body[data-mode="premium"] .premium-mode .premium-card p{overflow-wrap:anywhere;}
@@ -150,7 +150,6 @@ async function loadPremiumEdition(date) {
 }
 
 function syncPremiumPager(){const old=document.querySelector('#premiumNewsPager,.premium-news-pager');if(old)old.remove();}
-}
 
 async function initialPremiumPager() {
   premiumPagerInitialized = true;
