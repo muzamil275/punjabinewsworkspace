@@ -16,7 +16,7 @@ function sceneFor(text) {
   if (/rain|flood|monsoon|weather|ndma|بارش|سیلاب|مون سون|موسم/.test(t)) return 'weather';
   if (/polio|health|medical|hospital|vaccin|health worker|پولیو|صحت|ویکس/.test(t)) return 'health';
   if (/cricket|test match|hockey|kabaddi|squash|us open|tennis|alcaraz|zverev|player|sports|کھیل|کرکٹ|ہاکی/.test(t)) return 'sports';
-  if (/ai|artificial intelligence|openai|gpt|cyberattack|cybersecurity|technology|tech|گوگل|مصنوعی ذہانت|ٹیکنالوجی/.test(t)) return 'technology';
+  if (/(?:\\bai\\b|artificial intelligence|openai|gpt|cyberattack|cybersecurity|technology|\\btech\\b|گوگل|مصنوعی ذہانت|ٹیکنالوجی)/.test(t)) return 'technology';
   if (/airport|flight|airline|drone|aviation|ایئرپورٹ|پرواز|ڈرون/.test(t)) return 'aviation';
   if (/ship|shipping|hormuz|naval|vessel|maritime|port|جہاز|آبنائے|بندرگاہ/.test(t)) return 'shipping';
   if (/oil|petrol|diesel|fuel|energy|lng|refinery|pipeline|nepra|electricity|توانائی|پٹرول|ڈیزل|بجلی|ریفائنری/.test(t)) return 'energy';
