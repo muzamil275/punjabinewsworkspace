@@ -114,7 +114,7 @@ module.exports = async (req, res) => {
     const includeDates = String(req.query?.includeDates ?? '1') !== '0';
     let availableDates = [];
     if (includeDates) {
-      const datesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on&order=published_on.desc&limit=1000');
+      const datesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on,daily_rank&order=published_on.desc&limit=1000');
       const dateRows = await dbJson(datesResponse);
       if (Array.isArray(dateRows)) {
         const ranksByDate = new Map();
