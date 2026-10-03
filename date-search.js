@@ -41,8 +41,8 @@
           const title = requestLang === 'ur' ? p.title_ur : p.title_en;
           const text = requestLang === 'ur' ? p.excerpt_ur : p.excerpt_en;
           const source = p.source_url && p.source_name ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>` : esc(p.source_name || '');
-          const image = p.image_url ? `<div class="news-image-wrap"><img src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>` : '';
-          return `<article class="news-card"><div class="news-image-wrap">${image ? image.replace('<div class="news-image-wrap">','').replace('</div>','') : ''}</div><div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(formatDate(p.published_on))}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div></article>`;
+          const image = p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(title)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : '';
+          return `<article class="news-card"><div class="news-image-wrap">${image}</div><div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(formatDate(p.published_on))}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div></article>`;
         }).join('');
       }
       localStorage.setItem('pnw_selected_news_date', actualDate);
