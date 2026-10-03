@@ -53,11 +53,9 @@ function pickLiveImage(post) {
 function normalizeImages(posts) {
   return (Array.isArray(posts) ? posts : []).map(post => ({
     ...post,
-    // Always use the story-specific renderer so stale database images cannot
-    // show an unrelated stock photo for a different story.
-    image_url: /^\d+$/.test(String(post.id || ''))
-      ? `/api/news-image?id=${encodeURIComponent(post.id)}`
-      : pickLiveImage(post)
+    // Keep the existing CDN image system so images load reliably.
+    // Matching is based on the story headline/category, not a stale DB image.
+    image_url: pickLiveImage(post)
   }));
 }
 
