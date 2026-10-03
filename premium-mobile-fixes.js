@@ -90,20 +90,42 @@ function showEditionLoading(grid) {
   grid.innerHTML = '<div class="premium-gate edition-loading" aria-live="polite"><span class="premium-gate-kicker">Loading edition</span><h3>Switching news date…</h3><p>The selected edition is loading.</p></div>';
 }
 
+function renderPremiumPreview() {
+  const grid = qs('#premiumGrid');
+  if (!grid) return;
+  grid.innerHTML = \
+    '<div class="premium-gate premium-preview-gate">' +
+    '<span class="premium-gate-kicker">PREMIUM PREVIEW</span>' +
+    '<h3>See what Premium adds.</h3>' +
+    '<p>Premium news is available here only while your Premium access is active.</p>' +
+    '<div class="preview-feature-grid">' +
+    '<div><b>Deep brief</b><span>More context around each daily story.</span></div>' +
+    '<div><b>Source context</b><span>Cleaner source details and easier reading.</span></div>' +
+    '<div><b>Priority layout</b><span>A focused Premium workspace for deeper reading.</span></div>' +
+    '</div>' +
+    '<button class="primary" type="button" data-premium-preview-action>Manage Premium</button>' +
+    '</div>';
+  grid.querySelector('[data-premium-preview-action]')?.addEventListener('click', loadManagementAndOpen);
+}
+
 async function ensurePremiumAccess() {
   const token = localStorage.getItem('pnw_token') || '';
   if (!token) {
-    loadManagementAndOpen();
+    window.__PNW_PREMIUM_ACCESS = { checked:true, active:false, owner:false };
+    renderPremiumPreview();
     return false;
   }
   try {
     const r = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
     const data = await r.json().catch(() => ({}));
-    const active = Boolean(data.user?.isOwner || data.subscription?.active);
-    if (!active) loadManagementAndOpen();
+    const owner = Boolean(data.user?.isOwner);
+    const active = owner || Boolean(data.subscription?.active);
+    window.__PNW_PREMIUM_ACCESS = { checked:true, active, owner };
+    if (!active) renderPremiumPreview();
     return active;
   } catch {
-    loadManagementAndOpen();
+    window.__PNW_PREMIUM_ACCESS = { checked:true, active:false, owner:false };
+    renderPremiumPreview();
     return false;
   }
 }
@@ -197,6 +219,13 @@ function installPremiumInteractionGuard() {
 function start() {
   installPremiumFixes();
   installPremiumInteractionGuard();
+  const modeObserver = new MutationObserver(() => {
+    if (document.body?.dataset.mode !== 'premium') return;
+    const date = localStorage.getItem('pnw_selected_news_date') || new Date().toISOString().slice(0,10);
+    if (window.__PNW_PREMIUM_ACCESS?.active !== true) loadPremiumEdition(date);
+    else if (!qs('#premiumGrid .premium-card')) loadPremiumEdition(date);
+  });
+  modeObserver.observe(document.body, { attributes:true, attributeFilter:['data-mode'] });
   window.addEventListener('pnw:premium-date-search', event => {
     const date = event.detail?.date;
     if (date) loadPremiumEdition(date);
