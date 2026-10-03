@@ -78,10 +78,10 @@ function renderPremiumCards(posts, lang) {
       : (p.source_name ? String(p.source_name) : '');
     const loading = index < 2 ? 'eager' : 'lazy';
     const priority = index < 2 ? ' fetchpriority="high"' : '';
-    const image = p.image_url ? `<img src="${String(p.image_url).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;')}" alt="${safeTitle}" loading="${loading}" decoding="async"${priority}>` : '';
     const safeTitle = String(title ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
     const safeText = String(text ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
     const safeCategory = String(p.category ?? '').replace(/[&<>\"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
+    const image = p.image_url ? `<img src="${String(p.image_url).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;')}" alt="${safeTitle}" loading="${loading}" decoding="async"${priority}>` : '';
     return `<article class="news-card premium-card">${image}<div class="card-top"><span class="rank">0${Number(p.daily_rank)||0}</span><span class="category">${safeCategory}</span></div><h3>${safeTitle}</h3><p>${safeText}</p><div class="card-meta"><time>${formatDate(p.published_on || p.updated_at, lang)}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div><span class="premium-tag">Premium mode</span></article>`;
   }).join('');
 }
