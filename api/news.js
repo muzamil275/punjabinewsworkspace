@@ -54,7 +54,7 @@ function normalizeImages(posts) {
   return (Array.isArray(posts) ? posts : []).map(post => {
     const storedImage = String(post.image_url || '').trim();
     const generatedImage = /^\d+$/.test(String(post.id || ''))
-      ? `/api/news-image?id=${encodeURIComponent(post.id)}`
+      ? `/api/news-image?id=${encodeURIComponent(post.id)}&v=20261004a`
       : '';
     return {
       ...post,
