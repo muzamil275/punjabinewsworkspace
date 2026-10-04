@@ -1,4 +1,4 @@
-const CACHE_NAME='pnw-static-v17';
+const CACHE_NAME='pnw-static-v18';
 const APP_SHELL=['/','/index.html','/styles.css?v=20261004c','/enhancements.css','/mobile-fixes.css?v=20260914a','/premium-motion.css?v=20260919a','/workspace-fixes.css?v=20260920a','/config.js?v=20260923a','/otp-session-upgrade.js?v=20261003b','/app.js?v=20261004b','/history.js?v=20260908a','/premium-motion.js?v=20260919a','/urdu-ui.js?v=20260908a','/workspace-fixes.js?v=20261004b','/premium-management-v2.js?v=20260920d','/premium-mobile-fixes.js?v=20261003b','/date-search.js?v=20261004b','/manifest.webmanifest?v=20260909c','/favicon.svg?v=20260909c','/news-images/fallback.svg'];
 const STATIC_EXT=/\.(?:css|js|svg|png|jpg|jpeg|webp|ico|webmanifest)$/i;
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()))});
