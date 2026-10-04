@@ -92,7 +92,7 @@ module.exports = async (req, res) => {
     if (!r.ok || !Array.isArray(rows) || !rows[0]) return json(res, { error: 'Story not found.' }, 404);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+    res.setHeader('Cache-Control', 'no-store, max-age=0, must-revalidate');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.end(makeSvg(rows[0]));
   } catch (error) {
