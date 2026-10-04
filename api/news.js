@@ -53,15 +53,15 @@ function pickLiveImage(post) {
 function normalizeImages(posts) {
   return (Array.isArray(posts) ? posts : []).map(post => {
     const storedImage = String(post.image_url || '').trim();
+    const isGeneratedImage = /^\/api\/news-image(?:\?|$)/.test(storedImage);
     const generatedImage = /^\d+$/.test(String(post.id || ''))
       ? `/api/news-image?id=${encodeURIComponent(post.id)}&v=20261004a`
       : '';
     return {
       ...post,
-      // Prefer a story-specific stored/generated image so the same category photo
-      // is not reused across every fuel, security, sports, etc. story.
-      // Fall back to the curated category image only when no story image exists.
-      image_url: storedImage || generatedImage || pickLiveImage(post)
+      // Keep custom stored HTTPS images, but always refresh our own generated
+      // story images so an older cached /api/news-image URL cannot stay stuck.
+      image_url: isGeneratedImage ? generatedImage : (storedImage || generatedImage || pickLiveImage(post))
     };
   });
 }
