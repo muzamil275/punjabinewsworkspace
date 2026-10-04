@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const EMAIL='muzamil.275pk@gmail.com', FALLBACK_IMAGE='/news-images/fallback.svg?v=20261004a', GEMINI_HISTORY_KEY='pnw_gemini_history_v2';
+const EMAIL='muzamil.275pk@gmail.com', FALLBACK_IMAGE='/news-images/fallback.svg?v=20261004c', GEMINI_HISTORY_KEY='pnw_gemini_history_v2';
 const qs=s=>document.querySelector(s), lang=()=>localStorage.getItem('pnw_language')||'en', isUrdu=()=>lang()==='ur';
 const esc=v=>String(v??'').replace(/[&<>\"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
 const fmtDate=d=>new Date(`${d}T12:00:00`).toLocaleDateString(isUrdu()?'ur-PK':'en-PK',{dateStyle:'medium'});
