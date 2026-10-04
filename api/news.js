@@ -54,14 +54,10 @@ function normalizeImages(posts) {
   return (Array.isArray(posts) ? posts : []).map(post => {
     const storedImage = String(post.image_url || '').trim();
     const isGeneratedImage = /^\/api\/news-image(?:\?|$)/.test(storedImage);
-    const generatedImage = /^\d+$/.test(String(post.id || ''))
-      ? `/api/news-image?id=${encodeURIComponent(post.id)}&v=20261004c`
-      : '';
+    const isHttpsImage = /^https:\/\//i.test(storedImage);
     return {
       ...post,
-      // Keep custom stored HTTPS images, but always refresh our own generated
-      // story images so an older cached /api/news-image URL cannot stay stuck.
-      image_url: isGeneratedImage ? generatedImage : (storedImage || generatedImage || pickLiveImage(post))
+      image_url: isHttpsImage && !isGeneratedImage ? storedImage : pickLiveImage(post)
     };
   });
 }
