@@ -55,7 +55,7 @@ function normalizeImages(posts) {
     const storedImage = String(post.image_url || '').trim();
     const isGeneratedImage = /^\/api\/news-image(?:\?|$)/.test(storedImage);
     const generatedImage = /^\d+$/.test(String(post.id || ''))
-      ? `/api/news-image?id=${encodeURIComponent(post.id)}&v=20261004a`
+      ? `/api/news-image?id=${encodeURIComponent(post.id)}&v=20261004c`
       : '';
     return {
       ...post,
