@@ -47,7 +47,7 @@
           const title = requestLang === 'ur' ? p.title_ur : p.title_en;
           const text = requestLang === 'ur' ? p.excerpt_ur : p.excerpt_en;
           const source = p.source_url && p.source_name ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>` : esc(p.source_name || '');
-          const image = p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(title)}" loading="eager" decoding="async" fetchpriority="high" referrerpolicy="no-referrer">` : '';
+          const image = p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(title)}" loading="eager" decoding="async" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\'/news-images/fallback.svg?v=20261004c\'">` : '';
           return `<article class="news-card"><div class="news-image-wrap">${image}</div><div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(formatDate(p.published_on))}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div></article>`;
         }).join('');
       }
