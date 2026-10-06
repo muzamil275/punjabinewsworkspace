@@ -103,7 +103,6 @@ try{
  if(initId!==initRequestSeq||requestLang!==lang())return;
  if(!r.ok){state.dates=[];pager();return}
  state.dates=Array.isArray(d.availableDates)?d.availableDates:[];
- const saved=localStorage.getItem('pnw_selected_news_date');
  // A fresh launch must always start on the current latest edition. The saved date is only for explicit date-selection state after the app has loaded.
  const latest=d.date||state.dates[0]||null;
  state.selected=latest;
