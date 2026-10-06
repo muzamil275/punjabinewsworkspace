@@ -222,11 +222,13 @@ function start() {
   window.addEventListener('pnw:premium-access-ready', () => {
     if (window.__PNW_PREMIUM_ACCESS?.active !== true) return;
     const date = localStorage.getItem('pnw_selected_news_date') || new Date().toISOString().slice(0,10);
-    loadPremiumEdition(date);
+    window.__PNW_PREMIUM_PRELOADING = true;
+    loadPremiumEdition(date).finally(() => { window.__PNW_PREMIUM_PRELOADING = false; });
   });
   if (window.__PNW_PREMIUM_ACCESS?.active === true) {
     const date = localStorage.getItem('pnw_selected_news_date') || new Date().toISOString().slice(0,10);
-    loadPremiumEdition(date);
+    window.__PNW_PREMIUM_PRELOADING = true;
+    loadPremiumEdition(date).finally(() => { window.__PNW_PREMIUM_PRELOADING = false; });
   }
   const modeObserver = new MutationObserver(() => {
     if (document.body?.dataset.mode !== 'premium') return;
