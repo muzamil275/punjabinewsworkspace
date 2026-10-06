@@ -232,6 +232,7 @@ function start() {
   }
   const modeObserver = new MutationObserver(() => {
     if (document.body?.dataset.mode !== 'premium') return;
+    if (window.__PNW_PREMIUM_PRELOADING) return;
     const date = localStorage.getItem('pnw_selected_news_date') || new Date().toISOString().slice(0,10);
     if (window.__PNW_PREMIUM_ACCESS?.active !== true) loadPremiumEdition(date);
     else if (!qs('#premiumGrid .premium-card')) loadPremiumEdition(date);
