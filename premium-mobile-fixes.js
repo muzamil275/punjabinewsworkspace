@@ -218,6 +218,16 @@ function installPremiumInteractionGuard() {
 function start() {
   installPremiumFixes();
   installPremiumInteractionGuard();
+  // Preload only after verified Premium access so the mode switch can reuse the ready edition without waiting.
+  window.addEventListener('pnw:premium-access-ready', () => {
+    if (window.__PNW_PREMIUM_ACCESS?.active !== true) return;
+    const date = localStorage.getItem('pnw_selected_news_date') || new Date().toISOString().slice(0,10);
+    loadPremiumEdition(date);
+  });
+  if (window.__PNW_PREMIUM_ACCESS?.active === true) {
+    const date = localStorage.getItem('pnw_selected_news_date') || new Date().toISOString().slice(0,10);
+    loadPremiumEdition(date);
+  }
   const modeObserver = new MutationObserver(() => {
     if (document.body?.dataset.mode !== 'premium') return;
     const date = localStorage.getItem('pnw_selected_news_date') || new Date().toISOString().slice(0,10);
