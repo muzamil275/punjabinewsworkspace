@@ -106,15 +106,18 @@
     else setTimeout(run, 500);
   }
 
-  async function getDates() {
-    try {
-      const token = localStorage.getItem('pnw_token') || '';
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const r = await fetch(`/api/news?lang=${encodeURIComponent(lang())}&includeDates=1`, { headers, cache: 'no-store' });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) return [];
-      return Array.isArray(d.availableDates) ? d.availableDates : [];
-    } catch { return []; }
+  let availableDatesPromise = null;
+  function getDates() {
+    if (availableDatesPromise) return availableDatesPromise;
+    availableDatesPromise = (async () => {
+      try {
+        const r = await fetch(`/api/news?lang=${encodeURIComponent(lang())}&includeDates=1&datesOnly=1`, { cache: 'no-store' });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) return [];
+        return Array.isArray(d.availableDates) ? d.availableDates : [];
+      } catch { return []; }
+    })();
+    return availableDatesPromise;
   }
 
   function pakistanToday() {
