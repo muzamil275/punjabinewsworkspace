@@ -1,7 +1,7 @@
 const { json, cors } = require('../lib/api');
 const WINDOW=60*1000,LIMIT=20;
 const rates=global.__pnwPushSubRates||(global.__pnwPushSubRates=new Map());
-function allowedOrigin(req){const origin=String(req.headers.origin||'');const expected=String(process.env.FRONTEND_ORIGIN||'');return !origin||!expected||origin===expected;}
+function allowedOrigin(req){const origin=String(req.headers.origin||'');const expected=String(process.env.FRONTEND_ORIGIN||'');return Boolean(origin&&expected&&origin===expected);}
 function serviceConfig(){const url=String(process.env.SUPABASE_URL||'').replace(/\/$/,'');const key=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('Server-side database credentials are not configured.');return{url,key};}
 async function db(path,init={}){const {url,key}=serviceConfig(),headers=new Headers(init.headers||{});headers.set('apikey',key);headers.set('Authorization','Bearer '+key);if(init.body&&!headers.has('content-type'))headers.set('content-type','application/json');return fetch(url+'/rest/v1/'+path,{...init,headers});}
 function clientIp(req){return String(req.headers['x-forwarded-for']||req.headers['x-real-ip']||'unknown').split(',')[0].trim();}
