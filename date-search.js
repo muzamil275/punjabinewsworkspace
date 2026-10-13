@@ -30,7 +30,9 @@
     grid.setAttribute('aria-busy', 'true');
     grid.innerHTML = '<article class="loading-card skeleton-card"><span></span><span></span><span></span></article>';
     try {
-      const r = await fetch(`/api/news?lang=${encodeURIComponent(requestLang)}&date=${encodeURIComponent(date)}`, { cache: 'no-store' });
+      const token = localStorage.getItem('pnw_token') || '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const r = await fetch(`/api/news?lang=${encodeURIComponent(requestLang)}&date=${encodeURIComponent(date)}`, { headers, cache: 'no-store' });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'News request failed.');
       if (requestSeq !== editionRequestSeq || requestLang !== lang()) return;
@@ -53,8 +55,12 @@
       }
       localStorage.setItem('pnw_selected_news_date', actualDate);
       window.dispatchEvent(new CustomEvent('pnw:news-edition',{detail:{date:actualDate,posts}}));
-    } catch {
-      grid.innerHTML = '<div class="loading-card error" role="alert"><div><p>Couldn’t load this edition.</p><span>Please try again.</span></div></div>';
+    } catch (error) {
+      const premiumRequired = /Please sign in first|Premium access is required/i.test(error?.message || '');
+      const message = premiumRequired
+        ? (lang() === 'ur' ? 'پرانی خبریں دیکھنے کے لیے سائن اِن اور فعال پریمیم رسائی درکار ہے۔' : 'Historical editions require sign-in and active Premium access.')
+        : (lang() === 'ur' ? 'یہ ایڈیشن لوڈ نہیں ہو سکا۔ دوبارہ کوشش کریں۔' : 'Couldn’t load this edition. Please try again.');
+      grid.innerHTML = `<div class="loading-card error" role="alert"><div><p>${esc(message)}</p></div></div>`;
     } finally {
       grid.setAttribute('aria-busy', 'false');
     }
@@ -99,9 +105,9 @@
     else setTimeout(run, 500);
   }
 
-  async function getDates(premium = false) {
+  async function getDates() {
     try {
-      const token = premium ? (localStorage.getItem('pnw_token') || '') : '';
+      const token = localStorage.getItem('pnw_token') || '';
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const r = await fetch(`/api/news?lang=${encodeURIComponent(lang())}&includeDates=1`, { headers, cache: 'no-store' });
       const d = await r.json().catch(() => ({}));
@@ -143,7 +149,7 @@
     const maxDate = pakistanToday();
 
     const loadAvailableDates = async () => {
-      const dates = await getDates(premium);
+      const dates = await getDates();
       const usableDates = dates.filter(d => validCalendarDate(d) && d >= minDate && d <= maxDate);
       select.innerHTML = `<option value="">${selectPrompt}</option>${usableDates.map(d => `<option value="${esc(d)}">${esc(formatDate(d))}</option>`).join('')}`;
     };
