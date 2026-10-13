@@ -14,7 +14,7 @@ Please do not post live credentials, payment receipts, private user information,
 
 ## Access-control expectations
 
-- Public readers may access the current published news edition.
-- Historical editions require a valid signed-in Premium account or the owner account.
+- Free mode may read all published news editions and their date-picker entries.
+- Premium-only actions (such as Gemini access and payment review) must be authorized server-side.
 - Payment-proof files must remain in the private `payment-proofs` storage bucket.
 - Premium activation and payment review must remain server-authorized.
