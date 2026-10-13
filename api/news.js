@@ -87,19 +87,37 @@ module.exports = async (req, res) => {
     const targetDate = hasExplicitDate ? requestedDate : today;
     if (targetDate > today) return json(res, { error: 'Future editions are not available.' }, 400);
     const datesOptions = {};
+    const includeDates = String(req.query?.includeDates ?? '1') !== '0';
+    if (String(req.query?.datesOnly || '') === '1') {
+      const datesResponse = await supabaseFetch('rpc/get_available_news_dates');
+      const dateRows = await dbJson(datesResponse);
+      const availableDates = datesResponse.ok && Array.isArray(dateRows)
+        ? dateRows.map(row => row?.published_on).filter(Boolean).sort((a, b) => b.localeCompare(a))
+        : [];
+      return json(res, {posts:[],date:today,requestedDate:today,isLatestAvailable:false,availableDates,language:req.query?.lang==='ur'?'ur':'en'});
+    }
     const select = 'id,category,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on,daily_rank,updated_at';
-    let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
+    let queryDate = targetDate;
+    if (!hasExplicitDate) {
+      const latestDateResponse = await supabaseFetch('rpc/get_latest_complete_news_date');
+      const latestDateRows = await dbJson(latestDateResponse);
+      const latestCompleteDate = latestDateResponse.ok && Array.isArray(latestDateRows)
+        ? latestDateRows.map(row => row?.published_on).filter(Boolean).sort().at(-1)
+        : null;
+      if (latestCompleteDate) queryDate = latestCompleteDate;
+    }
+    let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(queryDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
     let data = await dbJson(r);
     if (!r.ok) return json(res, { error: 'News is temporarily unavailable.' }, 503);
     if (!Array.isArray(data)) data = [];
-    let effectiveDate = targetDate;
+    let effectiveDate = queryDate;
     if (!hasExplicitDate && data.length !== 5) {
-      const latestDatesResponse = await supabaseFetch('rpc/get_latest_complete_news_date');
-      const latestDateRows = await dbJson(latestDatesResponse);
-      const latestCompleteDate = latestDatesResponse.ok && Array.isArray(latestDateRows)
+      const latestDateResponse = await supabaseFetch('rpc/get_latest_complete_news_date');
+      const latestDateRows = await dbJson(latestDateResponse);
+      const latestCompleteDate = latestDateResponse.ok && Array.isArray(latestDateRows)
         ? latestDateRows.map(row => row?.published_on).filter(Boolean).sort().at(-1)
         : null;
-      if (latestCompleteDate) {
+      if (latestCompleteDate && latestCompleteDate !== queryDate) {
         const latestResponse = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(latestCompleteDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
         const latestRows = await dbJson(latestResponse);
         if (latestResponse.ok && Array.isArray(latestRows) && latestRows.length === 5) {
@@ -108,7 +126,6 @@ module.exports = async (req, res) => {
         } else data = [];
       } else data = [];
     }
-    const includeDates = String(req.query?.includeDates ?? '1') !== '0';
     let availableDates = [];
     if (includeDates) {
       const datesResponse = await supabaseFetch('rpc/get_available_news_dates', datesOptions);
