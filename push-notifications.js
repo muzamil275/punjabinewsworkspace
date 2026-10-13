@@ -27,5 +27,6 @@ async function disable(){const sub=await currentSubscription();if(sub){try{await
 button.addEventListener('click',async()=>{if(busy)return;busy=true;button.disabled=true;try{const sub=await currentSubscription();if(sub&&Notification.permission==='granted')await disable();else await enable();}catch(e){message(e?.message||'Could not update notification settings.','اطلاعات کی سیٹنگ تبدیل نہیں ہو سکی۔');}finally{busy=false;await updateState();}});
 window.addEventListener('languagechange',updateState);
 window.addEventListener('pnw:language-changed',updateState);
+new MutationObserver(()=>updateState()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',updateState,{once:true});else updateState();
 })();
