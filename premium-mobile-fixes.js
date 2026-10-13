@@ -16,7 +16,7 @@ function installPremiumFixes() {
     #premiumMode .premium-news-pager .news-page span{display:block;line-height:1;font-weight:900;}
     #premiumMode .premium-news-pager .news-page small{display:block;line-height:1.05;font-size:.62rem;white-space:nowrap;}
     body[data-mode="premium"] .premium-mode .premium-hero .secondary{white-space:nowrap;min-width:max-content;}
-    body[data-mode="premium"] .premium-mode .premium-hero .muted{color:#d9e2ef!important;font-weight:500;line-height:1.55;letter-spacing:.005em;text-shadow:0 1px 10px rgba(0,0,0,.25);}
+    body[data-mode="premium"] .premium-mode .premium-hero .muted{color:#d9e2ef!important;font-weight:500;line-height:1.45;letter-spacing:.005em;text-shadow:0 1px 10px rgba(0,0,0,.25);}
     body[data-mode="premium"] .premium-mode .premium-hero .muted::selection{background:rgba(255,181,46,.35);color:#fff;}
     body[data-mode="premium"] .premium-mode .premium-card h3,
     body[data-mode="premium"] .premium-mode .premium-card p,
@@ -46,8 +46,8 @@ function installPremiumFixes() {
       body[data-mode="premium"] .premium-mode .premium-card{grid-column:1 / -1;min-height:0;width:100%;padding:18px;border-radius:12px;overflow:hidden;}
       body[data-mode="premium"] .premium-mode .premium-card .news-image-wrap{width:100%;max-width:100%;margin:0 0 16px;overflow:hidden;}
       body[data-mode="premium"] .premium-mode .premium-card img{display:block;width:100%!important;max-width:100%!important;height:auto!important;aspect-ratio:16/9;object-fit:cover!important;object-position:center center!important;margin:0!important;}
-      body[data-mode="premium"] .premium-mode .premium-card h3{font-size:1.3rem;line-height:1.15;margin:14px 0 9px;overflow-wrap:anywhere;}
-      body[data-mode="premium"] .premium-mode .premium-card p{font-size:1rem;line-height:1.5;overflow-wrap:anywhere;}
+      body[data-mode="premium"] .premium-mode .premium-card h3{font-size:1.3rem;line-height:1.12;margin:12px 0 8px;overflow-wrap:anywhere;}
+      body[data-mode="premium"] .premium-mode .premium-card p{font-size:1rem;line-height:1.4;overflow-wrap:anywhere;}
       body[data-mode="premium"] .premium-mode .premium-news-pager{width:100%;max-width:100%;margin:22px auto 12px;gap:6px;justify-content:center;box-sizing:border-box;}
       body[data-mode="premium"] .premium-mode .premium-news-pager .news-page{min-width:50px;min-height:40px;padding:5px 7px;}
       body[data-mode="premium"] .premium-mode .gemini-workspace{margin-left:0;margin-right:0;max-width:100%;min-width:0;}
