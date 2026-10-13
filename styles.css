@@ -10,3 +10,6 @@
 .date-search-controls label{gap:4px}
 .date-search-controls input,.date-search-controls select{height:40px;min-height:40px;padding:0 10px;border-radius:10px}
 .date-search-controls button{height:40px;min-height:40px;padding:0 15px}
+
+/* Opt-in news push control: deliberately follows existing Basic-mode pill styling. */
+.notification-toggle{font-size:.78rem;padding:9px 11px;white-space:nowrap}.notification-toggle[aria-pressed="true"]{border-color:var(--accent);background:rgba(166,58,37,.08)}.notification-toggle:disabled{opacity:.65;cursor:help}@media(max-width:760px){.site-header{gap:10px}.header-tools{gap:6px}.notification-toggle{padding:8px 9px;font-size:.72rem}}
