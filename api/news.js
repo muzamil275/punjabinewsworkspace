@@ -1,4 +1,4 @@
-const { json, cors, supabaseFetch, dbJson, karachiDate, requireUser, isOwner } = require('../lib/api');
+const { json, cors, supabaseFetch, dbJson, karachiDate } = require('../lib/api');
 
 const LIVE_IMAGES = {
   cricket: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=1200&q=82',
@@ -86,23 +86,9 @@ module.exports = async (req, res) => {
     }
     const targetDate = hasExplicitDate ? requestedDate : today;
     if (targetDate > today) return json(res, { error: 'Future editions are not available.' }, 400);
-    let archiveAuth = '';
-    if (hasExplicitDate && targetDate < today) {
-      const user = await requireUser(req, res);
-      if (!user) return;
-      archiveAuth = req.headers.authorization || '';
-      if (!isOwner(user)) {
-        const subResponse = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=status,access_ends_at&limit=1`, { authHeader: archiveAuth });
-        const subRows = subResponse.ok ? await dbJson(subResponse) : [];
-        const sub = Array.isArray(subRows) ? subRows[0] : null;
-        const active = Boolean(sub && ['active','provisional','cancelled'].includes(sub.status) && sub.access_ends_at && new Date(sub.access_ends_at).getTime() > Date.now());
-        if (!active) return json(res, { error: 'Premium access is required to view historical editions.' }, 403);
-      }
-    }
-    const archiveOptions = archiveAuth ? { authHeader: archiveAuth } : {};
-    const datesOptions = req.headers.authorization ? { authHeader: req.headers.authorization } : {};
+    const datesOptions = {};
     const select = 'id,category,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on,daily_rank,updated_at';
-    let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`, archiveOptions);
+    let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
     let data = await dbJson(r);
     if (!r.ok) return json(res, { error: 'News is temporarily unavailable.' }, 503);
     if (!Array.isArray(data)) data = [];
