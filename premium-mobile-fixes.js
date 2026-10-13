@@ -148,7 +148,9 @@ async function loadPremiumEdition(date) {
     showEditionLoading(grid);
   }
   try {
-    const r = await fetch(`/api/news?lang=${encodeURIComponent(lang)}&date=${encodeURIComponent(date)}&includeDates=0`, { cache:'no-store' });
+    const token = localStorage.getItem('pnw_token') || '';
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const r = await fetch(`/api/news?lang=${encodeURIComponent(lang)}&date=${encodeURIComponent(date)}&includeDates=0`, { headers, cache:'no-store' });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'News request failed.');
     editionCache.set(`${lang}:${date}`, data);
