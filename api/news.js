@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
     if (!Array.isArray(data)) data = [];
     let effectiveDate = targetDate;
     if (!hasExplicitDate && data.length !== 5) {
-      const latestDatesResponse = await supabaseFetch('rpc/get_available_news_dates');
+      const latestDatesResponse = await supabaseFetch('rpc/get_latest_complete_news_date');
       const latestDateRows = await dbJson(latestDatesResponse);
       const latestCompleteDate = latestDatesResponse.ok && Array.isArray(latestDateRows)
         ? latestDateRows.map(row => row?.published_on).filter(Boolean).sort().at(-1)
