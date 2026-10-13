@@ -16,7 +16,7 @@
     if (q('#dateSearchStyles')) return;
     const s = document.createElement('style');
     s.id = 'dateSearchStyles';
-    s.textContent = `.date-search-controls{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;width:100%;margin:0 0 18px}.date-search-controls .date-search-custom,.date-search-controls .date-search-available{display:flex;align-items:flex-end;gap:8px}.date-search-controls label{display:flex;flex-direction:column;gap:5px;font-size:.72rem;font-weight:800;opacity:.75}.date-search-controls input,.date-search-controls select{height:42px;display:block;border:1px solid rgba(127,120,109,.22);border-radius:12px;padding:0 11px;background:transparent;color:inherit;font:inherit;min-width:150px}.date-search-controls button{height:42px;min-height:42px;padding:0 17px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}.main-nav .text-button{transform:translateY(-1px)}#newsGrid .news-card{user-select:text;-webkit-user-select:text}@media(max-width:600px){.date-search-controls{align-items:stretch}.date-search-controls .date-search-custom,.date-search-controls .date-search-available{width:100%;align-items:stretch}.date-search-controls label{flex:1;min-width:140px}.date-search-controls input,.date-search-controls select{width:100%;min-width:0}.date-search-controls button{width:100%}}`;
+    s.textContent = `.date-search-controls{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;width:100%;margin:0 0 16px}.date-search-controls .date-search-custom,.date-search-controls .date-search-available{display:flex;align-items:flex-end;gap:6px}.date-search-controls label{display:flex;flex-direction:column;gap:4px;font-size:.72rem;font-weight:800;opacity:.75}.date-search-controls input,.date-search-controls select{height:40px;display:block;border:1px solid rgba(127,120,109,.22);border-radius:10px;padding:0 10px;background:transparent;color:inherit;font:inherit;min-width:150px}.date-search-controls button{height:40px;min-height:40px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}.main-nav .text-button{transform:translateY(-1px)}#newsGrid .news-card{user-select:text;-webkit-user-select:text}@media(max-width:600px){.date-search-controls{align-items:stretch}.date-search-controls .date-search-custom,.date-search-controls .date-search-available{width:100%;align-items:stretch}.date-search-controls label{flex:1;min-width:140px}.date-search-controls input,.date-search-controls select{width:100%;min-width:0}.date-search-controls button{width:100%}}`;
     document.head.appendChild(s);
   }
 
@@ -53,6 +53,7 @@
           return `<article class="news-card"><div class="news-image-wrap">${image}</div><div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(formatDate(p.published_on))}</time>${source ? `<span class="meta-dot">·</span><span>${source}</span>` : ''}</div></article>`;
         }).join('');
       }
+      window.__PNW_USER_SELECTED_DATE = actualDate;
       localStorage.setItem('pnw_selected_news_date', actualDate);
       window.dispatchEvent(new CustomEvent('pnw:news-edition',{detail:{date:actualDate,posts}}));
     } catch (error) {
