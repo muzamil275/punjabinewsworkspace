@@ -1,4 +1,4 @@
-const { json, cors, supabaseFetch, dbJson, karachiDate } = require('../lib/api');
+const { json, cors, supabaseFetch, dbJson, karachiDate, requireUser, isOwner } = require('../lib/api');
 
 const LIVE_IMAGES = {
   cricket: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=1200&q=82',
@@ -86,9 +86,44 @@ module.exports = async (req, res) => {
     }
     const targetDate = hasExplicitDate ? requestedDate : today;
     if (targetDate > today) return json(res, { error: 'Future editions are not available.' }, 400);
-    const datesOptions = {};
+    const authHeader = req.headers.authorization || '';
+    const datesOptions = authHeader ? { authHeader } : {};
     const select = 'id,category,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on,daily_rank,updated_at';
-    let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
+    let archiveAuth = '';
+    if (hasExplicitDate && targetDate < today) {
+      // The newest complete edition is a public fallback only while today's edition is incomplete.
+      // Any older edition requires a signed-in owner or active Premium account.
+      const editionRowsResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on,daily_rank&order=published_on.desc&limit=1000', datesOptions);
+      const editionRows = editionRowsResponse.ok ? await dbJson(editionRowsResponse) : [];
+      const ranksByDate = new Map();
+      if (Array.isArray(editionRows)) {
+        for (const row of editionRows) {
+          if (!row?.published_on || row.daily_rank == null) continue;
+          if (!ranksByDate.has(row.published_on)) ranksByDate.set(row.published_on, new Set());
+          ranksByDate.get(row.published_on).add(Number(row.daily_rank));
+        }
+      }
+      const todayRanks = ranksByDate.get(today) || new Set();
+      const todayComplete = [1,2,3,4,5].every(rank => todayRanks.has(rank));
+      const completeDates = [...ranksByDate.entries()]
+        .filter(([, ranks]) => [1,2,3,4,5].every(rank => ranks.has(rank)))
+        .map(([date]) => date)
+        .sort();
+      const publicFallbackDate = !todayComplete && completeDates.length ? completeDates[completeDates.length - 1] : null;
+      if (targetDate !== publicFallbackDate) {
+        const user = await requireUser(req, res);
+        if (!user) return;
+        archiveAuth = authHeader;
+        if (!isOwner(user)) {
+          const subResponse = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=status,access_ends_at&limit=1`, { authHeader });
+          const subRows = subResponse.ok ? await dbJson(subResponse) : [];
+          const sub = Array.isArray(subRows) ? subRows[0] : null;
+          const active = Boolean(sub && ['active','provisional','cancelled'].includes(sub.status) && sub.access_ends_at && new Date(sub.access_ends_at).getTime() > Date.now());
+          if (!active) return json(res, { error: 'Premium access is required to view historical editions.' }, 403);
+        }
+      }
+    }
+    let r = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(targetDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`, archiveAuth ? { authHeader: archiveAuth } : datesOptions);
     let data = await dbJson(r);
     if (!r.ok) return json(res, { error: 'News is temporarily unavailable.' }, 503);
     if (!Array.isArray(data)) data = [];
