@@ -129,19 +129,11 @@ module.exports = async (req, res) => {
     if (!Array.isArray(data)) data = [];
     let effectiveDate = targetDate;
     if (!hasExplicitDate && data.length !== 5) {
-      const latestDatesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on,daily_rank&order=published_on.desc&limit=1000');
+      const latestDatesResponse = await supabaseFetch('rpc/get_available_news_dates');
       const latestDateRows = await dbJson(latestDatesResponse);
-      const completeDates = new Set();
-      if (latestDatesResponse.ok && Array.isArray(latestDateRows)) {
-        const ranksByDate = new Map();
-        for (const row of latestDateRows) {
-          if (!row?.published_on || row.daily_rank == null) continue;
-          if (!ranksByDate.has(row.published_on)) ranksByDate.set(row.published_on, new Set());
-          ranksByDate.get(row.published_on).add(Number(row.daily_rank));
-        }
-        for (const [date, ranks] of ranksByDate) if (ranks.size === 5 && [1,2,3,4,5].every(rank => ranks.has(rank))) completeDates.add(date);
-      }
-      const latestCompleteDate = [...completeDates].sort().at(-1);
+      const latestCompleteDate = latestDatesResponse.ok && Array.isArray(latestDateRows)
+        ? latestDateRows.map(row => row?.published_on).filter(Boolean).sort().at(-1)
+        : null;
       if (latestCompleteDate) {
         const latestResponse = await supabaseFetch(`news_posts?published_on=eq.${encodeURIComponent(latestCompleteDate)}&is_published=eq.true&select=${select}&order=daily_rank.asc&limit=5`);
         const latestRows = await dbJson(latestResponse);
@@ -154,19 +146,10 @@ module.exports = async (req, res) => {
     const includeDates = String(req.query?.includeDates ?? '1') !== '0';
     let availableDates = [];
     if (includeDates) {
-      const datesResponse = await supabaseFetch('news_posts?is_published=eq.true&select=published_on,daily_rank&order=published_on.desc&limit=1000', datesOptions);
+      const datesResponse = await supabaseFetch('rpc/get_available_news_dates', datesOptions);
       const dateRows = await dbJson(datesResponse);
-      if (Array.isArray(dateRows)) {
-        const ranksByDate = new Map();
-        for (const row of dateRows) {
-          if (!row?.published_on || row.daily_rank == null) continue;
-          if (!ranksByDate.has(row.published_on)) ranksByDate.set(row.published_on, new Set());
-          ranksByDate.get(row.published_on).add(Number(row.daily_rank));
-        }
-        availableDates = [...ranksByDate.entries()]
-          .filter(([, ranks]) => ranks.size === 5 && [1,2,3,4,5].every(rank => ranks.has(rank)))
-          .map(([date]) => date)
-          .sort((a, b) => b.localeCompare(a));
+      if (datesResponse.ok && Array.isArray(dateRows)) {
+        availableDates = dateRows.map(row => row?.published_on).filter(Boolean).sort((a, b) => b.localeCompare(a));
       }
     }
     return json(res, {posts:normalizeImages(data),date:effectiveDate,requestedDate:targetDate,isLatestAvailable:effectiveDate!==targetDate,availableDates,language:req.query?.lang==='ur'?'ur':'en'});
