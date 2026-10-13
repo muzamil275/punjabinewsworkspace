@@ -16,7 +16,7 @@ function reveal(){const g=qs('#newsGrid');if(g)g.style.visibility='visible'}
 function goToNewsTop(){const target=newsTop();if(!target)return;setTimeout(()=>{const header=qs('.site-header');const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-(header?.getBoundingClientRect().height||78)-12);window.scrollTo({top:y,behavior:'smooth'})},60)}
 function goToPremiumNews(){const target=qs('#premiumGrid')||qs('#premiumMode');if(!target)return;setTimeout(()=>{const header=qs('.site-header');const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-(header?.getBoundingClientRect().height||78)-18);window.scrollTo({top:y,behavior:'smooth'})},60)}
 function pager(){const el=qs('#newsPager');if(el)el.replaceChildren();}
-function card(p,premium=false){const title=isUrdu()?p.title_ur:p.title_en,text=isUrdu()?p.excerpt_ur:p.excerpt_en,src=p.image_url||FALLBACK_IMAGE;const img=`<div class="news-image-wrap"><img src="${esc(src)}" alt="${esc(title)}" loading="eager" decoding="async" fetchpriority="high" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"></div>`;const source=p.source_url&&p.source_name?`<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>`:esc(p.source_name||'');return `<article class="news-card ${premium?'premium-card':''} workspace-card" data-history-title="${esc(title)}">${img}<div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(fmtDate(p.published_on))}</time>${source?`<span class="meta-dot">·</span><span>${source}</span>`:''}</div>${premium?'<span class="premium-tag">Premium mode</span>':''}</article>`}
+function card(p,premium=false){const title=isUrdu()?p.title_ur:p.title_en,text=isUrdu()?p.excerpt_ur:p.excerpt_en,src=p.image_url||FALLBACK_IMAGE;const img=`<div class="news-image-wrap"><img src="${esc(src)}" alt="${esc(title)}" loading="${Number(p.daily_rank)===1?'eager':'lazy'}" decoding="async" fetchpriority="${Number(p.daily_rank)===1?'high':'auto'}" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'"></div>`;const source=p.source_url&&p.source_name?`<a href="${esc(p.source_url)}" target="_blank" rel="noopener noreferrer">${esc(p.source_name)}</a>`:esc(p.source_name||'');return `<article class="news-card ${premium?'premium-card':''} workspace-card" data-history-title="${esc(title)}">${img}<div class="card-top"><span class="rank">0${esc(p.daily_rank)}</span><span class="category">${esc(p.category)}</span></div><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="card-meta"><time>${esc(fmtDate(p.published_on))}</time>${source?`<span class="meta-dot">·</span><span>${source}</span>`:''}</div>${premium?'<span class="premium-tag">Premium mode</span>':''}</article>`}
 function syncPremiumEdition(){if(document.body?.dataset.mode!=='premium')return;const grid=qs('#premiumGrid');if(!grid)return;if(window.__PNW_PREMIUM_ACCESS?.active===true)return;if(window.__PNW_PREMIUM_ACCESS?.checked===true){grid.innerHTML='';return;}}
 function renderGeminiHistory(){const box=qs('#geminiMessages');if(!box)return;if(!state.geminiHistory.length){box.innerHTML='<div class="gemini-empty">Ask for today\'s news, a summary of a story, or a comparison of the available workspace stories.</div>';return}box.innerHTML=state.geminiHistory.map(item=>`<div class="gemini-message ${item.role==='user'?'user':'assistant'}"><span class="gemini-role">${item.role==='user'?'You':'Gemini'}</span><div class="gemini-text">${esc(item.text).replace(/\n/g,'<br>')}</div></div>`).join('');box.scrollTop=box.scrollHeight}
 function resetGemini(){state.geminiHistory=[];saveGeminiHistory();renderGeminiHistory();const p=qs('#geminiPrompt'),s=qs('#geminiStatus');if(p){p.value='';p.disabled=false}if(s)s.textContent='';qs('#geminiAsk')?.removeAttribute('disabled')}
@@ -52,7 +52,7 @@ pager();
 const grid=qs('#newsGrid');
 if(grid){grid.setAttribute('aria-busy','true');grid.innerHTML='<article class="loading-card skeleton-card"><span></span><span></span><span></span></article>'}
 try{
- const r=await fetch(`/api/news?lang=${encodeURIComponent(requestLang)}&date=${encodeURIComponent(date)}`,{cache:'no-store'}),d=await r.json();
+ const token=localStorage.getItem('pnw_token')||'';const headers=token?{Authorization:`Bearer ${token}`} : {};const r=await fetch(`/api/news?lang=${encodeURIComponent(requestLang)}&date=${encodeURIComponent(date)}`,{headers,cache:'no-store'}),d=await r.json();
  if(!r.ok)throw new Error(d.error||'News unavailable');
  if(requestId!==editionRequestSeq||requestLang!==lang())return;
  state.dates=Array.isArray(d.availableDates)?d.availableDates:state.dates;
@@ -99,7 +99,7 @@ async function initEditions(){
 const initId=++initRequestSeq;
 const requestLang=lang();
 try{
- const r=await fetch(`/api/news?lang=${encodeURIComponent(requestLang)}`,{cache:'no-store'}),d=await r.json();
+ const token=localStorage.getItem('pnw_token')||'';const headers=token?{Authorization:`Bearer ${token}`} : {};const r=await fetch(`/api/news?lang=${encodeURIComponent(requestLang)}`,{headers,cache:'no-store'}),d=await r.json();
  if(initId!==initRequestSeq||requestLang!==lang())return;
  if(!r.ok){state.dates=[];pager();return}
  state.dates=Array.isArray(d.availableDates)?d.availableDates:[];
@@ -109,7 +109,18 @@ try{
  state.latestNotice=d.isLatestAvailable&&d.date?d.date:null;
  if(latest)localStorage.setItem('pnw_selected_news_date',latest);else localStorage.removeItem('pnw_selected_news_date');
  pager();
- if(latest)await loadEdition(latest,false);else reveal();
+ if(latest){
+   state.selected=d.date||latest;
+   state.posts=Array.isArray(d.posts)?d.posts:[];
+   const grid=qs('#newsGrid');
+   if(grid){grid.innerHTML=state.posts.map(p=>card(p)).join('')||'<div class="loading-card">No stories have been published yet.</div>';grid.setAttribute('aria-busy','false');reveal();}
+   const dateEl=qs('#newsDate');if(dateEl)dateEl.textContent=state.latestNotice===state.selected?`Latest edition: ${fmtDate(state.selected)}`:fmtDate(state.selected);
+   localStorage.setItem('pnw_selected_news_date',state.selected);
+   state.latestNotice=null;
+   syncPremiumEdition();
+   window.dispatchEvent(new CustomEvent('pnw:news-edition',{detail:{date:state.selected,posts:state.posts}}));
+ }else{const grid=qs('#newsGrid');if(grid){grid.innerHTML='<div class="loading-card">No news edition is available yet. Please check again soon.</div>';grid.setAttribute('aria-busy','false');reveal();}}
+
 }catch{
  state.dates=[];state.selected=null;pager();reveal();
 }}
