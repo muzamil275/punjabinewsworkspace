@@ -99,9 +99,11 @@
     else setTimeout(run, 500);
   }
 
-  async function getDates() {
+  async function getDates(premium = false) {
     try {
-      const r = await fetch(`/api/news?lang=${encodeURIComponent(lang())}&includeDates=1`, { cache: 'no-store' });
+      const token = premium ? (localStorage.getItem('pnw_token') || '') : '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const r = await fetch(`/api/news?lang=${encodeURIComponent(lang())}&includeDates=1`, { headers, cache: 'no-store' });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) return [];
       return Array.isArray(d.availableDates) ? d.availableDates : [];
@@ -140,10 +142,13 @@
     const minDate = MIN_EDITION_DATE;
     const maxDate = pakistanToday();
 
-    getDates().then(dates => {
+    const loadAvailableDates = async () => {
+      const dates = await getDates(premium);
       const usableDates = dates.filter(d => validCalendarDate(d) && d >= minDate && d <= maxDate);
       select.innerHTML = `<option value="">${selectPrompt}</option>${usableDates.map(d => `<option value="${esc(d)}">${esc(formatDate(d))}</option>`).join('')}`;
-    });
+    };
+    loadAvailableDates();
+    if (premium) window.addEventListener('pnw:premium-access-ready', loadAvailableDates);
 
     const searchDate = date => {
       if (!date) return;
