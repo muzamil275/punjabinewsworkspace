@@ -1,18 +1,18 @@
-/* Compact header: keep the brand and account/language controls on one line. */
+/* Compact header: keep the brand mark and account/language controls on one line. */
 .site-header {
   gap: 16px;
   padding-top: 5px;
   padding-bottom: 5px;
 }
 .brand {
-  flex: 0 1 auto;
+  flex: 0 0 150px;
   min-width: 0;
   gap: 7px;
 }
 .brand-logo {
-  width: 32px !important;
-  height: 32px !important;
-  flex: 0 0 32px !important;
+  width: 150px !important;
+  height: 40px !important;
+  flex: 0 0 150px !important;
   object-fit: contain;
   border-radius: 7px;
 }
@@ -37,15 +37,21 @@
     min-width: 0;
   }
   .site-header > .brand {
-    flex: 0 1 34px;
-    width: 34px;
-    min-width: 30px;
+    flex: 0 0 48px;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
     overflow: hidden;
+    align-self: center;
   }
   .site-header .brand-logo {
-    width: 30px !important;
-    height: 30px !important;
-    flex-basis: 30px !important;
+    width: 48px !important;
+    height: 48px !important;
+    flex: 0 0 48px !important;
+    max-width: none;
+    object-fit: cover;
+    object-position: left center;
+    border-radius: 9px;
   }
   .site-header > .main-nav {
     display: none !important;
@@ -87,14 +93,15 @@
     padding-right: 7px;
   }
   .site-header > .brand {
-    flex-basis: 30px;
-    width: 30px;
-    min-width: 28px;
+    flex-basis: 42px;
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
   }
   .site-header .brand-logo {
-    width: 28px !important;
-    height: 28px !important;
-    flex-basis: 28px !important;
+    width: 42px !important;
+    height: 42px !important;
+    flex-basis: 42px !important;
   }
   .site-header > .header-tools {
     gap: 4px;
