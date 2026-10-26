@@ -1,0 +1,111 @@
+/* Compact header: keep the brand and account/language controls on one line. */
+.site-header {
+  gap: 16px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.brand {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 7px;
+}
+.brand-logo {
+  width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px !important;
+  object-fit: contain;
+  border-radius: 7px;
+}
+.header-tools {
+  flex: 0 0 auto;
+  gap: 6px;
+  white-space: nowrap;
+}
+.mode-pill {
+  padding: 6px 10px;
+}
+.pill,
+.account-button {
+  padding: 7px 12px;
+}
+@media (max-width: 760px) {
+  .site-header {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 6px 10px;
+    min-width: 0;
+  }
+  .site-header > .brand {
+    flex: 0 1 34px;
+    width: 34px;
+    min-width: 30px;
+    overflow: hidden;
+  }
+  .site-header .brand-logo {
+    width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+  }
+  .site-header > .main-nav {
+    display: none !important;
+  }
+  .site-header > .header-tools {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+    gap: 5px;
+  }
+  .header-tools .mode-switch {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 2px;
+    gap: 1px;
+  }
+  .header-tools .mode-pill {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 5px 7px;
+    font-size: .68rem;
+    white-space: nowrap;
+  }
+  .header-tools .pill,
+  .header-tools .account-button {
+    flex: 0 0 auto;
+    min-width: 0;
+    min-height: 36px;
+    padding: 6px 9px;
+    font-size: .78rem;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 360px) {
+  .site-header {
+    gap: 5px;
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+  .site-header > .brand {
+    flex-basis: 30px;
+    width: 30px;
+    min-width: 28px;
+  }
+  .site-header .brand-logo {
+    width: 28px !important;
+    height: 28px !important;
+    flex-basis: 28px !important;
+  }
+  .site-header > .header-tools {
+    gap: 4px;
+  }
+  .header-tools .mode-pill {
+    padding-inline: 5px;
+    font-size: .64rem;
+  }
+  .header-tools .pill,
+  .header-tools .account-button {
+    padding-inline: 7px;
+    font-size: .74rem;
+  }
+}
