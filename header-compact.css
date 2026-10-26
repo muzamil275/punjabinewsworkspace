@@ -89,3 +89,50 @@
   .header-tools .mode-pill { padding-inline: 4px; font-size: .63rem; }
   .header-tools .pill, .header-tools .account-button { padding-inline: 5px; font-size: .69rem; }
 }
+
+/* Mobile-first reading: reduce the oversized intro so today's stories appear sooner. */
+@media (max-width: 700px) {
+  .basic-mode .hero {
+    padding: 22px 0 18px !important;
+    max-width: 100%;
+  }
+  .basic-mode .hero > .eyebrow {
+    margin-bottom: 8px !important;
+    font-size: .68rem;
+    letter-spacing: .12em;
+  }
+  .basic-mode .hero h1 {
+    font-size: clamp(2.65rem, 10.2vw, 4rem) !important;
+    line-height: .98 !important;
+    letter-spacing: -.055em;
+  }
+  .basic-mode .hero-copy {
+    margin: 12px 0 0 !important;
+    font-size: clamp(1.05rem, 4.8vw, 1.3rem) !important;
+    line-height: 1.32 !important;
+  }
+  .basic-mode .news-section { padding-top: 12px; }
+  .basic-mode .section-heading { margin-bottom: 8px; gap: 8px; }
+  .basic-mode .section-heading .eyebrow { margin-bottom: 7px !important; }
+  .basic-mode .section-heading h2 { font-size: clamp(1.8rem, 7vw, 2.35rem) !important; line-height: 1.02; }
+  .basic-mode .date-wrap { font-size: .8rem; }
+  .date-search-controls { gap: 6px 8px !important; margin-bottom: 10px !important; }
+  .date-search-controls label { font-size: .78rem; }
+  .date-search-controls input, .date-search-controls select { height: 36px !important; font-size: .82rem; }
+  .date-search-controls button { height: 36px !important; min-height: 36px !important; font-size: .84rem; }
+  .news-pager { margin-bottom: 8px !important; }
+  /* Lead with the first headline; keep its image directly underneath the title. */
+  #newsGrid .news-card:first-child { display: flex; }
+  #newsGrid .news-card:first-child .card-top { order: 0; }
+  #newsGrid .news-card:first-child h3 { order: 1; margin-top: 10px !important; }
+  #newsGrid .news-card:first-child .news-image-wrap { order: 2; margin: 12px 0 14px !important; }
+  #newsGrid .news-card:first-child p { order: 3; }
+  #newsGrid .news-card:first-child .card-meta { order: 4; }
+  /* The clock button opens the activity drawer; keep it from covering content on phones. */
+  .history-launcher { width: 42px !important; height: 42px !important; right: 8px !important; bottom: 8px !important; opacity: .72; }
+}
+@media (max-width: 380px) {
+  .basic-mode .hero { padding-top: 18px !important; padding-bottom: 14px !important; }
+  .basic-mode .hero h1 { font-size: clamp(2.45rem, 10vw, 3.2rem) !important; }
+  .basic-mode .hero-copy { font-size: 1.02rem !important; }
+}
