@@ -1,4 +1,5 @@
 const { json, cors, requireUser, supabaseFetch, dbJson, parseRequestBody, uploadProof, deleteProof, randomName } = require('../lib/api');
+const { clientIp, rateLimit } = require('../lib/rate-limit');
 function extFor(type) { return type === 'image/jpeg' ? 'jpg' : type === 'image/png' ? 'png' : type === 'application/pdf' ? 'pdf' : ''; }
 function hasMagic(type, data) {
   if (!data || !data.length) return false;
@@ -12,6 +13,10 @@ module.exports = async (req, res) => {
   const authHeader = req.headers.authorization || '';
   try {
     const user = await requireUser(req, res); if (!user) return;
+    const ipLimit = rateLimit(`payments:ip:${clientIp(req)}`, 15, 10 * 60_000);
+    if (!ipLimit.allowed) { res.setHeader('Retry-After', String(ipLimit.retryAfter)); return json(res, { error: 'Too many payment attempts from this network. Please try again later.' }, 429); }
+    const userLimit = rateLimit(`payments:user:${user.id}`, 5, 10 * 60_000);
+    if (!userLimit.allowed) { res.setHeader('Retry-After', String(userLimit.retryAfter)); return json(res, { error: 'Payment attempt limit reached. Please wait before trying again.' }, 429); }
     const { fields, files } = await parseRequestBody(req); const method = String(fields.method || '').trim(), transactionId = String(fields.transactionId || '').trim(); const file = files.find(f => f.name === 'proof'); const ext = extFor(file?.contentType); const price = Number(process.env.PREMIUM_PRICE || 500);
     if (!['easypaisa','ubl'].includes(method) || !/^[A-Za-z0-9-]{6,80}$/.test(transactionId) || !file || !file.data?.length || file.data.length > 5 * 1024 * 1024 || !ext || !hasMagic(file.contentType, file.data) || !Number.isFinite(price) || price <= 0) return json(res, { error: 'Use a valid transaction ID and a genuine JPG, PNG, or PDF proof under 5 MB.' }, 422);
     const active = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&status=in.(active,provisional,cancelled)&access_ends_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id&limit=1`, { authHeader }); if (active.ok && (await dbJson(active)).length) return json(res, { error: 'Your Premium access is already active.' }, 409);

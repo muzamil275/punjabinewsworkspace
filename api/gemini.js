@@ -1,4 +1,5 @@
 const { json, cors, requireUser, isOwner, supabaseFetch, dbJson, safeText, karachiDate } = require('../lib/api');
+const { clientIp, rateLimit } = require('../lib/rate-limit');
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const REQUEST_TIMEOUT_MS = 20000;
 const MAX_HISTORY = 12;
@@ -23,9 +24,13 @@ module.exports = async (req, res) => {
   cors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return json(res, { error: 'Method not allowed.' }, 405);
+  const ipLimit = rateLimit(`gemini:ip:${clientIp(req)}`, 30, 60_000);
+  if (!ipLimit.allowed) { res.setHeader('Retry-After', String(ipLimit.retryAfter)); return json(res, { error: 'Too many AI requests from this network. Please try again shortly.' }, 429); }
   try {
     const user = await requireUser(req, res);
     if (!user) return;
+    const userLimit = rateLimit(`gemini:user:${user.id}`, 15, 60_000);
+    if (!userLimit.allowed) { res.setHeader('Retry-After', String(userLimit.retryAfter)); return json(res, { error: 'AI request limit reached. Please wait a minute and try again.' }, 429); }
     const owner = isOwner(user);
     if (!owner) {
       const r = await supabaseFetch(`subscriptions?user_id=eq.${encodeURIComponent(user.id)}&select=status,access_ends_at&limit=1`, { authHeader: req.headers.authorization || '' });
