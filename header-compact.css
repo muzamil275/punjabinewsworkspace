@@ -384,3 +384,33 @@
   .premium-mode .gemini-workspace { padding: 15px !important; }
   .premium-mode .premium-toolbar span { padding: 6px 8px !important; }
 }
+
+
+/* Shared layout polish: align Support with the other header controls in both modes. */
+.main-nav .text-button {
+  transform: none !important;
+  top: auto !important;
+  align-self: center;
+  line-height: 1.2;
+  margin: 0;
+  vertical-align: middle;
+}
+
+/* Give desktop Basic mode a calmer editorial scale without changing its typeface or palette. */
+@media (min-width: 701px) {
+  .basic-mode .hero {
+    padding-top: clamp(48px, 5.2vw, 72px) !important;
+    padding-bottom: 42px !important;
+    max-width: 1180px;
+  }
+  .basic-mode .hero h1 {
+    font-size: clamp(3.5rem, 6.5vw, 6.2rem) !important;
+    line-height: .96 !important;
+    letter-spacing: -.06em;
+    max-width: 1180px;
+  }
+  .basic-mode .hero-copy {
+    margin-top: 18px !important;
+    margin-bottom: 18px !important;
+  }
+}
