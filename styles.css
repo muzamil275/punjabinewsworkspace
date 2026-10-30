@@ -10,3 +10,14 @@
 .date-search-controls label{gap:4px}
 .date-search-controls input,.date-search-controls select{height:40px;min-height:40px;padding:0 10px;border-radius:10px}
 .date-search-controls button{height:40px;min-height:40px;padding:0 15px}
+
+
+/* Urdu reading direction and alignment. Keep controls and imagery in their original layout. */
+html[dir="rtl"] body{direction:rtl;text-align:right}
+html[dir="rtl"] body :is(h1,h2,h3,h4,p,li,label,small,strong,span,a,time,blockquote,.eyebrow,.muted,.date-wrap,.section-heading,.news-card,.card-top,.card-meta,.premium-hero,.premium-toolbar,.gemini-workspace,.gemini-head,.gemini-activity-head,.gemini-activity-heading,.gemini-messages,.gemini-message,.gemini-role,.gemini-text,.gemini-empty,.gemini-form,.gemini-actions,.gemini-activity-list,.gemini-activity-item,.footer-brand,.footer-column,.footer-copy,.loading-card,.premium-gate,.premium-tag,.premium-news-pager,.news-pager,.date-search-controls){direction:rtl;text-align:right!important}
+html[dir="rtl"] .site-header,html[dir="rtl"] .main-nav,html[dir="rtl"] .header-tools,html[dir="rtl"] main,html[dir="rtl"] footer{direction:rtl}
+html[dir="rtl"] .news-grid,html[dir="rtl"] .premium-grid,html[dir="rtl"] #newsPager,html[dir="rtl"] .premium-news-pager{direction:rtl}
+html[dir="rtl"] input:not([type="checkbox"]):not([type="radio"]),html[dir="rtl"] textarea,html[dir="rtl"] select{direction:rtl;text-align:right!important}
+html[dir="rtl"] .gemini-empty,html[dir="rtl"] .gemini-text,html[dir="rtl"] .gemini-message,html[dir="rtl"] .gemini-activity-panel,html[dir="rtl"] .gemini-activity-list{ text-align:right!important;direction:rtl}
+html[dir="rtl"] .loading-card.error{direction:rtl;text-align:right!important}
+html[dir="rtl"] .footer-column{align-items:flex-start}
