@@ -1,26 +1,139 @@
 (() => {
   'use strict';
-  const q=s=>document.querySelector(s);
-  const esc=v=>String(v??'').replace(/[&<>\"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[x]));
-  const KEY='pnw_activity_history';
-  let activities=[];
-  const ownerKey=()=>{const email=localStorage.getItem('pnw_saved_email')||'guest';return `${KEY}:${email.toLowerCase()}`};
-  const load=()=>{try{const v=JSON.parse(localStorage.getItem(ownerKey())||'[]');return Array.isArray(v)?v:[]}catch{return[]}};
-  const save=()=>{try{localStorage.setItem(ownerKey(),JSON.stringify(activities.slice(0,100)))}catch{}};
-  const now=()=>new Date().toISOString();
-  const labelDate=v=>new Date(v).toLocaleString(document.documentElement.lang==='ur'?'ur-PK':'en-PK',{dateStyle:'medium',timeStyle:'short'});
-  const titleOf=card=>card?.querySelector('h3')?.textContent.trim()||card?.querySelector('h2')?.textContent.trim()||'News story';
-  function add(type,title,detail=''){activities.unshift({id:crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`,type,title,detail,time:now()});save();renderHistory()}
-  function addStyles(){if(q('#activityHistoryStyles'))return;const s=document.createElement('style');s.id='activityHistoryStyles';s.textContent=`body.history-open{overflow:hidden}.activity-history-backdrop{position:fixed;inset:0;background:rgba(8,10,14,.38);backdrop-filter:blur(3px);z-index:9998;opacity:0;pointer-events:none;transition:opacity .2s}.activity-history-backdrop.open{opacity:1;pointer-events:auto}.activity-history{position:fixed;top:0;right:0;width:min(390px,92vw);height:100dvh;background:var(--premium-surface,#fff);color:var(--premium-text,#171717);z-index:9999;box-shadow:-18px 0 50px rgba(0,0,0,.18);transform:translateX(105%);transition:transform .25s cubic-bezier(.2,.72,.2,1);display:flex;flex-direction:column;border-left:1px solid rgba(127,120,109,.18)}.activity-history.open{transform:none}.activity-head{padding:18px 18px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(127,120,109,.16)}.activity-head h2{font-size:1.15rem;margin:0}.activity-head button{width:44px;height:44px;border:0;border-radius:12px;background:transparent;font-size:1.55rem;cursor:pointer}.activity-head button:hover,.activity-head button:focus-visible{background:rgba(127,120,109,.1);outline:none}.activity-search{padding:12px 18px;border-bottom:1px solid rgba(127,120,109,.12)}.activity-search form{display:flex;gap:8px}.activity-search input{min-width:0;flex:1;height:42px;border:1px solid rgba(127,120,109,.22);border-radius:12px;padding:0 12px;background:transparent;color:inherit;font:inherit}.activity-search button{height:42px;padding:0 14px;border:0;border-radius:12px;cursor:pointer;font-weight:800}.activity-body{flex:1;overflow:auto;padding:12px 18px 22px}.activity-section-title{margin:8px 0 10px;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;opacity:.62}.activity-item{padding:12px 0;border-bottom:1px solid rgba(127,120,109,.11)}.activity-item button,.activity-item a{display:block;width:100%;padding:0;border:0;background:none;text-align:left;color:inherit;font:inherit;cursor:pointer}.activity-item .activity-type{font-size:.68rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;opacity:.56;margin-bottom:3px}.activity-item .activity-title{font-weight:800;line-height:1.35}.activity-item .activity-detail{font-size:.8rem;opacity:.65;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.activity-item time{display:block;font-size:.72rem;opacity:.5;margin-top:5px}.activity-empty{padding:28px 4px;text-align:center;opacity:.58}.activity-footer{padding:12px 18px;border-top:1px solid rgba(127,120,109,.14);display:flex;justify-content:space-between;gap:8px}.activity-footer button{min-height:40px;border:1px solid rgba(127,120,109,.2);background:transparent;color:inherit;border-radius:10px;padding:0 12px;cursor:pointer;font:inherit;font-weight:700}.history-launcher{position:fixed;right:18px;bottom:18px;z-index:9990;width:54px;height:54px;border:1px solid rgba(127,120,109,.22);border-radius:16px;background:var(--premium-surface,#fff);color:inherit;box-shadow:0 10px 28px rgba(0,0,0,.14);font-size:1.25rem;cursor:pointer}.history-launcher:hover,.history-launcher:focus-visible{transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.18);outline:none}@media(max-width:520px){.history-launcher{right:12px;bottom:12px;width:50px;height:50px}.activity-history{width:100%;max-width:none}.activity-head{padding-top:max(12px,env(safe-area-inset-top))}.activity-footer{padding-bottom:max(12px,env(safe-area-inset-bottom))}}@media(prefers-reduced-motion:reduce){.activity-history,.activity-history-backdrop{transition:none}.history-launcher:hover{transform:none}}`;document.head.appendChild(s)}
-  function build(){addStyles();if(q('#historyLauncher'))return;const launcher=document.createElement('button');launcher.id='historyLauncher';launcher.className='history-launcher';launcher.type='button';launcher.title='Your activity';launcher.setAttribute('aria-label','Open your activity history');launcher.textContent='◷';document.body.appendChild(launcher);const back=document.createElement('div');back.id='activityHistoryBackdrop';back.className='activity-history-backdrop';document.body.appendChild(back);const panel=document.createElement('aside');panel.id='activityHistory';panel.className='activity-history';panel.setAttribute('aria-label','Your activity history');panel.innerHTML='<div class="activity-head"><div><h2>Your activity</h2><div class="activity-item-sub">News, searches, Gemini and modes</div></div><button id="historyClose" type="button" aria-label="Close history">×</button></div><div class="activity-search"><form id="newsSearchForm"><input id="newsSearch" type="search" maxlength="120" placeholder="Search today’s news…" aria-label="Search today’s news"><button type="submit">Search</button></form></div><div class="activity-body"><div class="activity-section-title">Recent activity</div><div id="activityList"></div></div><div class="activity-footer"><button id="historyClear" type="button">Clear history</button><button id="historyClose2" type="button">Close</button></div>';document.body.appendChild(panel);launcher.onclick=open;back.onclick=close;q('#historyClose').onclick=close;q('#historyClose2').onclick=close;q('#historyClear').onclick=()=>{activities=[];save();renderHistory()};q('#newsSearchForm').onsubmit=e=>{e.preventDefault();const term=q('#newsSearch').value.trim();if(!term)return;add('Search',term,'News search');searchNews(term)};activities=load();renderHistory()}
-  function open(){q('#activityHistory').classList.add('open');q('#activityHistoryBackdrop').classList.add('open');document.body.classList.add('history-open');q('#historyLauncher').setAttribute('aria-expanded','true')}
-  function close(){q('#activityHistory')?.classList.remove('open');q('#activityHistoryBackdrop')?.classList.remove('open');document.body.classList.remove('history-open');q('#historyLauncher')?.setAttribute('aria-expanded','false')}
-  function renderHistory(){const box=q('#activityList');if(!box)return;box.innerHTML=activities.length?activities.slice(0,60).map(a=>`<div class="activity-item"><div class="activity-type">${esc(a.type)}</div><div class="activity-title">${esc(a.title)}</div>${a.detail?`<div class="activity-detail">${esc(a.detail)}</div>`:''}<time datetime="${esc(a.time)}">${esc(labelDate(a.time))}</time></div>`).join(''):'<div class="activity-empty">No activity yet.<br>Open a story, search, change mode, or ask Gemini.</div>'}
-  function searchNews(term){const cards=[...document.querySelectorAll('#newsGrid .news-card,#premiumGrid .news-card')];let hits=0;cards.forEach(c=>{const hay=c.textContent.toLowerCase();const match=hay.includes(term.toLowerCase());c.style.display=match?'':'none';if(match)hits++});open();const box=q('#activityList');if(box&&hits===0)toastSearch('No matching stories found.');else if(box)toastSearch(`${hits} matching ${hits===1?'story':'stories'} found.`)}
-  function toastSearch(msg){const t=q('#toast');if(!t)return;t.textContent=msg;t.className='toast';t.classList.remove('hidden');clearTimeout(window.__historyToast);window.__historyToast=setTimeout(()=>t.classList.add('hidden'),2500)}
-  function clearSearch(){[...document.querySelectorAll('#newsGrid .news-card,#premiumGrid .news-card')].forEach(c=>c.style.display='')}
-  function bindActivity(){document.addEventListener('click',e=>{const mode=e.target.closest?.('.mode-pill[data-mode]');if(mode){const m=mode.dataset.mode;add('Mode',m==='premium'?'Premium':'Basic','Reading mode changed');return}const card=e.target.closest?.('.news-card');if(card&&!e.target.closest('a')){add('Opened',titleOf(card),document.body.dataset.mode==='premium'?'Premium story':'Basic story');return}const source=e.target.closest?.('.news-card a');if(source){add('Source',source.textContent.trim()||'Source link',source.href);return}},true);window.addEventListener('pnw:gemini-asked',e=>{const p=e.detail?.prompt;if(p)add('Gemini',p,e.detail?.newsDate?`Question sent to Gemini · edition ${e.detail.newsDate}`:'Question sent to Gemini')});window.addEventListener('beforeunload',()=>save())}
-  function integrateLanguage(){q('#languageToggle')?.addEventListener('click',()=>setTimeout(()=>{const box=q('#newsSearch');if(box)box.placeholder=document.documentElement.lang==='ur'?'آج کی خبریں تلاش کریں…':'Search today’s news…'},80))}
-  function init(){build();bindActivity();integrateLanguage()}
-  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
+  const q = s => document.querySelector(s);
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, x => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[x]));
+  const KEY = 'pnw_gemini_activity_v1';
+  const LEGACY_KEY = 'pnw_activity_history';
+  let activities = [];
+
+  const emailSuffix = () => (localStorage.getItem('pnw_saved_email') || 'guest').toLowerCase();
+  const storageKey = key => `${key}:${emailSuffix()}`;
+  const now = () => new Date().toISOString();
+  const labelDate = value => new Date(value).toLocaleString(
+    document.documentElement.lang === 'ur' ? 'ur-PK' : 'en-PK',
+    { dateStyle: 'medium', timeStyle: 'short' }
+  );
+
+  function load() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey(KEY)) || 'null');
+      if (Array.isArray(saved)) return saved.slice(0, 50);
+      // Preserve older Gemini activity entries without bringing old news/search/mode activity into this panel.
+      const legacy = JSON.parse(localStorage.getItem(storageKey(LEGACY_KEY)) || '[]');
+      const migrated = Array.isArray(legacy)
+        ? legacy.filter(item => item?.type === 'Gemini' && typeof item.title === 'string').slice(0, 50).map(item => ({
+            id: item.id || `${Date.now()}-${Math.random()}`,
+            prompt: item.title,
+            response: '',
+            edition: item.detail || '',
+            time: item.time || now()
+          }))
+        : [];
+      if (migrated.length) localStorage.setItem(storageKey(KEY), JSON.stringify(migrated));
+      return migrated;
+    } catch {
+      return [];
+    }
+  }
+
+  function save() {
+    try { localStorage.setItem(storageKey(KEY), JSON.stringify(activities.slice(0, 50))); } catch {}
+  }
+
+  function addStyles() {
+    if (q('#geminiActivityStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'geminiActivityStyles';
+    style.textContent = `
+      .gemini-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+      .gemini-activity-panel{margin:0 0 18px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink)}
+      .gemini-activity-panel.hidden{display:none}
+      .gemini-activity-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+      .gemini-activity-heading{display:grid;gap:3px}
+      .gemini-activity-heading strong{font-size:.92rem}
+      .gemini-activity-heading span{font-size:.76rem;color:var(--muted)}
+      .gemini-activity-head-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+      .gemini-activity-head-actions button{min-height:38px}
+      .gemini-activity-list{display:grid;gap:10px;max-height:360px;overflow:auto;padding-top:12px;overscroll-behavior:contain}
+      .gemini-activity-entry{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);overflow-wrap:anywhere}
+      .gemini-activity-label{font-size:.66rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+      .gemini-activity-prompt{font-weight:750;line-height:1.45;white-space:pre-wrap}
+      .gemini-activity-response{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:.88rem;line-height:1.55;white-space:pre-wrap}
+      .gemini-activity-edition{margin-top:7px;color:var(--muted);font-size:.72rem}
+      .gemini-activity-entry time{display:block;margin-top:8px;color:var(--muted);font-size:.7rem}
+      .gemini-activity-empty{padding:24px 8px;text-align:center;color:var(--muted);font-size:.86rem}
+      body[data-mode="premium"] .gemini-activity-panel{background:var(--premium-surface);border-color:var(--premium-line);color:var(--premium-text)}
+      body[data-mode="premium"] .gemini-activity-entry{background:var(--premium-surface-2);border-color:var(--premium-line)}
+      body[data-mode="premium"] .gemini-activity-response{border-color:var(--premium-line)}
+      @media(max-width:760px){.gemini-head-actions{justify-content:flex-start}.gemini-activity-head{align-items:flex-start;flex-direction:column}.gemini-activity-head-actions{width:100%}.gemini-activity-head-actions button{flex:1}}
+      @media(prefers-reduced-motion:reduce){.gemini-activity-panel{scroll-behavior:auto}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function render() {
+    const list = q('#geminiActivityList');
+    if (!list) return;
+    list.innerHTML = activities.length
+      ? activities.slice(0, 50).map(item => `
+          <article class="gemini-activity-entry">
+            <div class="gemini-activity-label">You asked Gemini</div>
+            <div class="gemini-activity-prompt">${esc(item.prompt)}</div>
+            ${item.response ? `<div class="gemini-activity-response"><div class="gemini-activity-label">Gemini response</div>${esc(item.response)}</div>` : ''}
+            ${item.edition ? `<div class="gemini-activity-edition">${esc(item.edition)}</div>` : ''}
+            <time datetime="${esc(item.time)}">${esc(labelDate(item.time))}</time>
+          </article>`
+        ).join('')
+      : '<div class="gemini-activity-empty">No Gemini activity yet. Your questions and Gemini responses will appear here.</div>';
+  }
+
+  function addGeminiActivity(event) {
+    const detail = event.detail || {};
+    const prompt = typeof detail.prompt === 'string' ? detail.prompt.trim() : '';
+    if (!prompt) return;
+    activities.unshift({
+      id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      prompt,
+      response: typeof detail.response === 'string' ? detail.response : '',
+      edition: detail.newsDate ? `News edition: ${detail.newsDate}` : '',
+      time: now()
+    });
+    activities = activities.slice(0, 50);
+    save();
+    render();
+  }
+
+  function togglePanel(forceOpen) {
+    const panel = q('#geminiActivityPanel');
+    const button = q('#geminiActivityToggle');
+    if (!panel || !button) return;
+    const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', !shouldOpen);
+    button.setAttribute('aria-expanded', String(shouldOpen));
+    if (shouldOpen) render();
+  }
+
+  function init() {
+    const workspace = q('#geminiWorkspace');
+    const toggle = q('#geminiActivityToggle');
+    const panel = q('#geminiActivityPanel');
+    if (!workspace || !toggle || !panel) return;
+    addStyles();
+    activities = load();
+    render();
+    toggle.addEventListener('click', () => togglePanel());
+    q('#geminiActivityClose')?.addEventListener('click', () => togglePanel(false));
+    q('#geminiActivityClear')?.addEventListener('click', () => {
+      activities = [];
+      save();
+      render();
+    });
+    window.addEventListener('pnw:gemini-asked', addGeminiActivity);
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
 })();
