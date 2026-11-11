@@ -1,4 +1,5 @@
 const { json, cors, supabaseFetch, dbJson, karachiDate } = require('../lib/api');
+const { syncPopularNews } = require('../lib/popular-news');
 
 const LIVE_IMAGES = {
   cricket: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=1200&q=82',
@@ -125,6 +126,18 @@ module.exports = async (req, res) => {
   cors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return json(res, { error: 'Method not allowed.' }, 405);
+  if (String(req.query?.refreshPopular || '') === '1') {
+    const authorization = req.headers.authorization || '';
+    if (!process.env.CRON_SECRET || authorization !== \`Bearer \${process.env.CRON_SECRET}\`) return json(res, { error: 'Unauthorized.' }, 401);
+    try {
+      const result = await syncPopularNews(karachiDate());
+      return json(res, { ok: true, ...result });
+    } catch (error) {
+      console.error(JSON.stringify({ event: 'popular-news-update', status: 'failed', message: error?.message || String(error) }));
+      return json(res, { ok: false, error: error?.message || 'Popular news update failed.' }, 500);
+    }
+  }
+
   const now = Date.now(), ip = newsClientIp(req), previous = newsRate.get(ip);
   if (!previous || now - previous.startedAt >= NEWS_RATE_WINDOW_MS) newsRate.set(ip, { startedAt: now, count: 1 });
   else { previous.count += 1; if (previous.count > NEWS_RATE_LIMIT) { res.setHeader('Retry-After','60'); return json(res, { error:'Too many news requests. Please try again in a minute.' }, 429); } }
