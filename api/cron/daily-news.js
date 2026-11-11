@@ -23,7 +23,7 @@ async function write(today,stories){const e=await db('news_posts?published_on=eq
 module.exports = async function handler(req,res){
  if(req.method!=='GET')return res.status(405).json({error:'Method not allowed.'});
  const a=req.headers.authorization||'';
- if(!process.env.CRON_SECRET||a!==\`Bearer \${process.env.CRON_SECRET}\`)return res.status(401).json({error:'Unauthorized.'});
+ if(!process.env.CRON_SECRET||a!=='Bearer '+process.env.CRON_SECRET)return res.status(401).json({error:'Unauthorized.'});
  try{
   const today=karachiDate(),edition=await current(today);
   if(edition.length===5&&edition.every((x,i)=>Number(x.daily_rank)===i+1&&x.title_en&&x.title_ur&&x.excerpt_en&&x.excerpt_ur&&x.image_url&&x.source_url))
