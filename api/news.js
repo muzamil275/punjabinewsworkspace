@@ -104,7 +104,7 @@ async function servePopularNews(req, res) {
   try {
     const today = karachiDate(), start = popularShiftDate(today, -6);
     const response = await supabaseFetch('popular_news?is_published=eq.true&trend_date=gte.' + encodeURIComponent(start) +
-      '&select=trend_date,country,google_query,approx_traffic,category,title_en,title_ur,excerpt_en,excerpt_ur,source_name,source_url,image_url,daily_rank,created_at&order=trend_date.desc,daily_rank.asc&limit=100');
+      '&select=trend_date,country,google_query,approx_traffic,category,title_en,title_ur,excerpt_en,excerpt_ur,source_name,source_url,image_url,daily_rank,created_at,updated_at&order=trend_date.desc,daily_rank.asc&limit=100');
     const rows = await dbJson(response);
     if (!response.ok) return json(res, { error: 'Popular news is temporarily unavailable.' }, 503);
     const records = Array.isArray(rows) ? rows : [];
@@ -114,7 +114,7 @@ async function servePopularNews(req, res) {
       ? records.filter(row => row.trend_date === latest).sort((a, b) => Number(a.daily_rank) - Number(b.daily_rank))
         .slice(0, 5).map(row => ({ ...row, countries: [row.country], trend_count: 1 }))
       : aggregatePopularNews(records);
-    const timestamp = records.reduce((max, row) => Math.max(max, Date.parse(row.created_at || '') || 0), 0);
+    const timestamp = records.reduce((max, row) => Math.max(max, Date.parse(row.updated_at || row.created_at || '') || 0), 0);
     return json(res, { window, stories, date: latest, updated_at: timestamp ? new Date(timestamp).toISOString() : null,
       range_start: window === '7d' ? start : latest, range_end: latest });
   } catch (error) {
