@@ -62,6 +62,65 @@ function normalizeImages(posts) {
   });
 }
 
+
+function popularShiftDate(date, days) {
+  const value = new Date(date + 'T00:00:00Z');
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+function popularTraffic(value) {
+  const text = String(value || '').toUpperCase();
+  const number = Number.parseFloat(text.replace(/,/g, ''));
+  return Number.isFinite(number) ? number * (text.includes('M') ? 1000000 : text.includes('K') ? 1000 : 1) : 0;
+}
+function popularNormalize(value) {
+  return String(value || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+function aggregatePopularNews(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    const key = popularNormalize(row.google_query);
+    if (!key) continue;
+    const item = groups.get(key) || { ...row, countries: new Set(), trend_count: 0, rank_score: 0, traffic_score: 0, latest_date: row.trend_date };
+    item.countries.add(row.country);
+    item.trend_count += 1;
+    item.rank_score += Math.max(1, 6 - Number(row.daily_rank || 5));
+    item.traffic_score += popularTraffic(row.approx_traffic);
+    if (row.trend_date > item.latest_date) Object.assign(item, {
+      latest_date: row.trend_date, title_en: row.title_en, title_ur: row.title_ur,
+      excerpt_en: row.excerpt_en, excerpt_ur: row.excerpt_ur, category: row.category,
+      source_name: row.source_name, source_url: row.source_url, image_url: row.image_url, country: row.country
+    });
+    groups.set(key, item);
+  }
+  return [...groups.values()].map(item => ({ ...item, countries: [...item.countries] }))
+    .sort((a, b) => b.trend_count - a.trend_count || b.rank_score - a.rank_score || b.traffic_score - a.traffic_score)
+    .slice(0, 5);
+}
+async function servePopularNews(req, res) {
+  const window = String(req.query?.window || '24h');
+  if (!['24h', '7d'].includes(window)) return json(res, { error: 'Use window=24h or window=7d.' }, 400);
+  try {
+    const today = karachiDate(), start = popularShiftDate(today, -6);
+    const response = await supabaseFetch('popular_news?is_published=eq.true&trend_date=gte.' + encodeURIComponent(start) +
+      '&select=trend_date,country,google_query,approx_traffic,category,title_en,title_ur,excerpt_en,excerpt_ur,source_name,source_url,image_url,daily_rank,created_at&order=trend_date.desc,daily_rank.asc&limit=100');
+    const rows = await dbJson(response);
+    if (!response.ok) return json(res, { error: 'Popular news is temporarily unavailable.' }, 503);
+    const records = Array.isArray(rows) ? rows : [];
+    if (!records.length) return json(res, { window, stories: [], updated_at: null, date: null });
+    const latest = records[0].trend_date;
+    const stories = window === '24h'
+      ? records.filter(row => row.trend_date === latest).sort((a, b) => Number(a.daily_rank) - Number(b.daily_rank))
+        .slice(0, 5).map(row => ({ ...row, countries: [row.country], trend_count: 1 }))
+      : aggregatePopularNews(records);
+    const timestamp = records.reduce((max, row) => Math.max(max, Date.parse(row.created_at || '') || 0), 0);
+    return json(res, { window, stories, date: latest, updated_at: timestamp ? new Date(timestamp).toISOString() : null,
+      range_start: window === '7d' ? start : latest, range_end: latest });
+  } catch (error) {
+    return json(res, { error: error.message || 'Popular news request failed.' }, 500);
+  }
+}
+
 module.exports = async (req, res) => {
   cors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -70,6 +129,7 @@ module.exports = async (req, res) => {
   if (!previous || now - previous.startedAt >= NEWS_RATE_WINDOW_MS) newsRate.set(ip, { startedAt: now, count: 1 });
   else { previous.count += 1; if (previous.count > NEWS_RATE_LIMIT) { res.setHeader('Retry-After','60'); return json(res, { error:'Too many news requests. Please try again in a minute.' }, 429); } }
   if (req.query?.lang && !['en','ur'].includes(String(req.query.lang))) return json(res, { error:'Unsupported language. Use lang=en or lang=ur.' }, 400);
+  if (String(req.query?.popular || '') === '1') return servePopularNews(req, res);
   try {
     const today = karachiDate();
     const hasExplicitDate = Boolean(req.query?.date);
