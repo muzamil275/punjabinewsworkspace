@@ -18,7 +18,7 @@ function applyLabels() {
 function message(s,k){status.textContent=s;status.dataset.kind=k||""}
 function render(data){
  const rows=(data.stories||[]).slice(0,5),ur=state.lang==="ur";
- if(!rows.length){grid.innerHTML='<div class="popular-news-empty"><strong>Popular stories are being prepared</strong><p>Verified Pakistan and India Google search trends will appear here after the daily update.</p></div>';message(ur?"ابھی کوئی تازہ ٹرینڈ دستیاب نہیں":"No verified trend snapshot is available yet","muted");updated.textContent="";return}
+ if(!rows.length){grid.innerHTML='<div class="popular-news-empty"><strong>'+(ur?"ٹرینڈنگ خبریں جلد دستیاب ہوں گی":"Popular stories are being prepared")+'</strong><p>'+(ur?"پاکستان اور بھارت کے گوگل سرچ ٹرینڈز کی روزانہ تصدیق کے بعد یہاں دکھائی جائیں گی۔":"Verified Pakistan and India Google search trends will appear here after the daily update.")+'</p></div>';message(ur?"ابھی کوئی تازہ ٹرینڈ دستیاب نہیں":"No verified trend snapshot is available yet","muted");updated.textContent="";return}
  grid.innerHTML=rows.map((x,i)=>{
   const title=ur?x.title_ur:x.title_en,excerpt=ur?x.excerpt_ur:x.excerpt_en,country=Array.isArray(x.countries)?x.countries.join(" · "):(x.country||"");
   const image=x.image_url?'<img src="'+esc(x.image_url)+'" alt="" loading="'+(i<2?"eager":"lazy")+'" decoding="async">':'<div class="popular-news-image-fallback"><span>PN</span></div>';
