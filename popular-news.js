@@ -23,12 +23,12 @@ function render(data){
   const title=ur?x.title_ur:x.title_en,excerpt=ur?x.excerpt_ur:x.excerpt_en,country=Array.isArray(x.countries)?x.countries.join(" · "):(x.country||"");
   const image=x.image_url?'<img src="'+esc(x.image_url)+'" alt="" loading="'+(i<2?"eager":"lazy")+'" decoding="async">':'<div class="popular-news-image-fallback"><span>PN</span></div>';
   const source=x.source_url?'<a class="popular-news-source" href="'+esc(x.source_url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.source_name||"Read source")+' ↗</a>':"";
-  const label=state.window==="7d"?(ur?String(x.trend_count||1)+" دن ٹرینڈنگ":"Trending "+String(x.trend_count||1)+" days"):(ur?"گوگل سرچ ٹرینڈ":"Google Search Trend");
+  const days=Number(x.trend_count||1);const label=state.window==="7d"?(ur?days+" دن ٹرینڈنگ":"Trending "+days+(days===1?" day":" days")):(ur?"گوگل سرچ ٹرینڈ":"Google Search Trend");
   return '<article class="popular-news-card" style="--card-order:'+i+'"><div class="popular-news-card-image">'+image+'<span class="popular-news-live"><i></i>'+label+'</span></div><div class="popular-news-card-body"><div class="popular-news-meta"><span class="popular-news-category">'+esc(x.category||"Top News")+'</span><span>'+esc(country)+'</span></div><h3>'+esc(title)+'</h3><p>'+esc(excerpt)+'</p><div class="popular-news-card-footer">'+source+'<span class="popular-news-arrow">↗</span></div></div></article>';
  }).join("");
  const stamp=data.updated_at?new Date(data.updated_at).toLocaleString(ur?"ur-PK":"en-PK",{dateStyle:"medium",timeStyle:"short"}):"";
  updated.textContent=stamp?(ur?"آخری اپ ڈیٹ: ":"Updated ")+stamp:"";
- message(state.window==="7d"?(ur?"گزشتہ سات دن کے روزانہ ٹرینڈز سے مرتب کردہ":"Ranked from the last seven daily trend snapshots"):(ur?"تازہ ترین دستیاب روزانہ ٹرینڈز":"Latest daily Google Trends snapshot"),"ready");
+ message(state.window==="7d"?(ur?"گزشتہ سات دن کے روزانہ ٹرینڈز سے مرتب کردہ":"Aggregated from the last seven daily trend snapshots"):(ur?"تازہ ترین دستیاب روزانہ ٹرینڈز":"Latest daily Google Trends snapshot"),"ready");
 }
 async function load(){if(state.loading)return;state.loading=true;grid.setAttribute("aria-busy","true");message(state.lang==="ur"?"ٹرینڈنگ خبریں لوڈ ہو رہی ہیں...":"Loading verified trends…");
  try{const r=await fetch("/api/news?popular=1&window="+state.window,{cache:"no-store"}),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Popular news unavailable.");render(d)}
