@@ -128,7 +128,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') return json(res, { error: 'Method not allowed.' }, 405);
   if (String(req.query?.refreshPopular || '') === '1') {
     const authorization = req.headers.authorization || '';
-    if (!process.env.CRON_SECRET || authorization !== \`Bearer \${process.env.CRON_SECRET}\`) return json(res, { error: 'Unauthorized.' }, 401);
+    if (!process.env.CRON_SECRET || authorization !== 'Bearer ' + process.env.CRON_SECRET) return json(res, { error: 'Unauthorized.' }, 401);
     try {
       const result = await syncPopularNews(karachiDate());
       return json(res, { ok: true, ...result });
