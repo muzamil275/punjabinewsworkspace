@@ -20,7 +20,7 @@ function render(data){
  message(state.window==="7d"?"Ranked from the last seven daily trend snapshots":"Latest daily Google Trends snapshot","ready");
 }
 async function load(){if(state.loading)return;state.loading=true;grid.setAttribute("aria-busy","true");message("Loading verified trends…");
- try{const r=await fetch("/api/popular-news?window="+state.window,{cache:"no-store"}),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Popular news unavailable.");render(d)}
+ try{const r=await fetch("/api/news?popular=1&window="+state.window,{cache:"no-store"}),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Popular news unavailable.");render(d)}
  catch(e){grid.innerHTML='<div class="popular-news-empty"><strong>Popular news could not be loaded</strong><p>'+esc(e.message)+'</p></div>';message("Connection issue","error")}
  finally{state.loading=false;grid.setAttribute("aria-busy","false")}}
 buttons.forEach(b=>b.addEventListener("click",()=>{if(state.window===b.dataset.popularWindow)return;state.window=b.dataset.popularWindow;buttons.forEach(x=>{const active=x===b;x.classList.toggle("active",active);x.setAttribute("aria-pressed",String(active))});load()}));
