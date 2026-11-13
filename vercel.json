@@ -83,10 +83,6 @@
     {
       "path": "/api/cron/daily-news",
       "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/news?refreshPopular=1",
-      "schedule": "10 14 * * *"
     }
   ]
 }
