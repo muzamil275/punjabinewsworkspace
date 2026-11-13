@@ -1,7 +1,8 @@
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const { syncPopularNews } = require('../../lib/popular-news');
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
 function karachiDate(){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Karachi',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const g=t=>p.find(x=>x.type===t)?.value||'';return [g('year'),g('month'),g('day')].join('-')}
-function supa(){const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('Server-side Supabase secret key is not configured.');return{url:url.replace(/\/$/,''),key}}
+function supa(){const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY;if(!url||!key)throw Error('Supabase publishable key is not configured.');return{url:url.replace(/\/$/,''),key}}
 async function db(path,init={}){const {url,key}=supa(),h=new Headers(init.headers||{});h.set('apikey',key);h.set('Authorization',`Bearer ${key}`);if(init.body&&!h.has('content-type'))h.set('content-type','application/json');return fetch(`${url}/rest/v1/${path}`,{...init,headers:h})}
 async function body(r){return r.json().catch(()=>({}))}
 function https(v){try{const u=new URL(String(v||'').trim());return u.protocol==='https:'?u.toString():null}catch{return null}}
@@ -18,21 +19,49 @@ const chunks=Array.isArray(d?.candidates?.[0]?.groundingMetadata?.groundingChunk
 for(const raw of stories){const s=clean(raw);if(!s.category||!s.title_en||!s.title_ur||!s.excerpt_en||!s.excerpt_ur||!s.source_name||!s.source_url)throw Error('Generated story is incomplete.');if(seenSources.has(s.source_url))throw Error('Generated stories contain duplicate sources.');seenSources.add(s.source_url);let image=s.image_url;try{const a=await fetch(s.source_url,{headers:{'User-Agent':'PunjabiNews/1.0'},signal:AbortSignal.timeout(7000)});if(a.ok)image=og(await a.text())||image}catch{}
 if(!https(image)){const host=new URL(s.source_url).hostname.replace(/^www\./,'');const c=chunks.find(x=>https(x.image.imageUri)&&(String(x.image.sourceUri||'').includes(host)||String(x.image.title||'').toLowerCase().includes(s.title_en.split(/\s+/).slice(0,3).join(' ').toLowerCase())));image=https(c?.image?.imageUri)}if(!https(image))throw Error('No relevant image found for a generated story.');if(seenImages.has(image))throw Error('Generated stories reused the same image.');seenImages.add(image);out.push({...s,image_url:image}); } return out; } finally { clearTimeout(tm); } }
 async function current(today){const r=await db('news_posts?published_on=eq.'+encodeURIComponent(today)+'&is_published=eq.true&select=id,daily_rank,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on&order=daily_rank.asc&limit=5');if(!r.ok)throw Error('Could not read current news.');const x=await body(r);return Array.isArray(x)?x:[]}
-async function write(today,stories){const e=await db('news_posts?published_on=eq.'+encodeURIComponent(today)+'&select=id,daily_rank'),rows=await body(e);if(!e.ok||!Array.isArray(rows))throw Error('Could not inspect current news rows.');const hide=await db('news_posts?published_on=eq.'+encodeURIComponent(today)+'&is_published=eq.true',{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({is_published:false})});if(!hide.ok)throw Error('Could not stage today news.');const byRank=new Map(rows.map(x=>[Number(x.daily_rank),x.id]));for(let i=0;i<5;i++){const s=stories[i],rank=i+1,p={...s,daily_rank:rank,published_on:today,is_published:false},id=byRank.get(rank),r=id?await db('news_posts?id=eq.'+encodeURIComponent(id)+'&published_on=eq.'+encodeURIComponent(today),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(p)}):await db('news_posts',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(p)});if(!r.ok)throw Error('Failed to stage rank '+rank+'.')}const staged=await db('news_posts?published_on=eq.'+encodeURIComponent(today)+'&select=id,daily_rank,title_en,title_ur,excerpt_en,excerpt_ur,image_url,source_name,source_url,published_on,is_published&order=daily_rank.asc'),sr=await body(staged);if(!staged.ok||!Array.isArray(sr)||sr.length!==5||sr.some((x,i)=>Number(x.daily_rank)!==i+1||x.is_published!==false||!x.image_url||!x.source_url))throw Error('Read-back verification failed before publication.');const pub=await db('news_posts?published_on=eq.'+encodeURIComponent(today),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({is_published:true})});if(!pub.ok)throw Error('Final publication write failed.');const v=await current(today);if(v.length!==5||v.some((x,i)=>Number(x.daily_rank)!==i+1||x.published_on!==today||!x.title_en||!x.title_ur||!x.excerpt_en||!x.excerpt_ur||!x.image_url||!x.source_url))throw Error('Final publication read-back verification failed.');return v}
-
+async function write(today,stories){
+ const secret=process.env.CRON_SECRET;
+ if(!secret)throw Error('CRON_SECRET is not configured.');
+ const rows=stories.map((story,index)=>({...clean(story),daily_rank:index+1}));
+ const response=await db('rpc/publish_daily_news',{
+  method:'POST',
+  headers:{Prefer:'return=representation'},
+  body:JSON.stringify({p_secret:secret,p_rows:rows})
+ });
+ const saved=await body(response);
+ if(!response.ok||Number(saved)!==5)throw Error('Secure daily-news publish failed: '+(saved?.message||saved?.details||response.status));
+ const published=await current(today);
+ if(published.length!==5||published.some((x,i)=>Number(x.daily_rank)!==i+1||x.published_on!==today||!x.title_en||!x.title_ur||!x.excerpt_en||!x.excerpt_ur||!x.image_url||!x.source_url))throw Error('Daily-news read-back verification failed.');
+ return published;
+}
 module.exports = async function handler(req,res){
  if(req.method!=='GET')return res.status(405).json({error:'Method not allowed.'});
- const a=req.headers.authorization||'';
- if(!process.env.CRON_SECRET||a!=='Bearer '+process.env.CRON_SECRET)return res.status(401).json({error:'Unauthorized.'});
+ const authorization=req.headers.authorization||'';
+ if(!process.env.CRON_SECRET||authorization!=='Bearer '+process.env.CRON_SECRET)return res.status(401).json({error:'Unauthorized.'});
+ const today=karachiDate();
+ let dailyNews={ok:false,status:'failed'},popularNews={ok:false,status:'failed'};
  try{
-  const today=karachiDate(),edition=await current(today);
-  if(edition.length===5&&edition.every((x,i)=>Number(x.daily_rank)===i+1&&x.title_en&&x.title_ur&&x.excerpt_en&&x.excerpt_ur&&x.image_url&&x.source_url))
-   return res.status(200).json({ok:true,status:'already-current',date:today,ranks:edition.map(x=>x.daily_rank)});
-  const stories=await generate(today),published=await write(today,stories);
-  console.log(JSON.stringify({event:'daily-news-update',status:'success',date:today,count:published.length}));
-  return res.status(200).json({ok:true,status:'updated',date:today,ranks:published.map(x=>x.daily_rank)});
- }catch(e){
-  console.error(JSON.stringify({event:'daily-news-update',status:'failed',message:e?.message||String(e)}));
-  return res.status(500).json({ok:false,status:'failed',error:e?.message||'Daily news update failed.'});
+  const edition=await current(today);
+  if(edition.length===5&&edition.every((x,i)=>Number(x.daily_rank)===i+1&&x.title_en&&x.title_ur&&x.excerpt_en&&x.excerpt_ur&&x.image_url&&x.source_url)){
+   dailyNews={ok:true,status:'already-current',date:today,count:5};
+  }else{
+   const stories=await generate(today);
+   const published=await write(today,stories);
+   dailyNews={ok:true,status:'updated',date:today,count:published.length};
+  }
+  console.log(JSON.stringify({event:'daily-news-update',status:dailyNews.status,date:today,count:dailyNews.count}));
+ }catch(error){
+  dailyNews={ok:false,status:'failed',error:error?.message||String(error)};
+  console.error(JSON.stringify({event:'daily-news-update',status:'failed',date:today,message:dailyNews.error}));
  }
+ try{
+  const result=await syncPopularNews(today);
+  popularNews={ok:true,...result};
+  console.log(JSON.stringify({event:'popular-news-update',status:result.status,date:today,count:result.count}));
+ }catch(error){
+  popularNews={ok:false,status:'failed',error:error?.message||String(error)};
+  console.error(JSON.stringify({event:'popular-news-update',status:'failed',date:today,message:popularNews.error}));
+ }
+ const ok=dailyNews.ok&&popularNews.ok;
+ return res.status(ok?200:500).json({ok,date:today,dailyNews,popularNews});
 };
