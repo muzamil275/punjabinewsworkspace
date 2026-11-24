@@ -145,7 +145,7 @@
     wrap.innerHTML =
       `<div class="date-search-custom"><label>${dateLabel}<input type="date" min="${MIN_EDITION_DATE}" max="${pakistanToday()}" aria-label="${dateLabel}"></label><button class="secondary" type="button" data-date-custom-search>${searchLabel}</button></div>` +
       `<div class="date-search-available"><label>${editionsLabel}<select aria-label="${editionsLabel}"><option value="">${selectPrompt}</option></select></label><button class="secondary" type="button" data-date-available-search>${searchLabel}</button></div>`;
-    target.parentNode.insertBefore(wrap, target);
+    target.insertAdjacentElement('afterend', wrap);
     const input = wrap.querySelector('input'), select = wrap.querySelector('select');
     const customButton = wrap.querySelector('[data-date-custom-search]');
     const availableButton = wrap.querySelector('[data-date-available-search]');
