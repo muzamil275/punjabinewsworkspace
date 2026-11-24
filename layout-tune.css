@@ -47,3 +47,44 @@
  .header-tools .mode-pill{padding:4px 4px!important;font-size:.62rem!important}
  .header-tools .pill,.header-tools .account-button{padding:4px 5px!important;font-size:.67rem!important}
 }
+
+
+/* Final cross-mode responsive polish: shared masthead and balanced Premium layout */
+@media(min-width:761px){
+  .site-header>.brand{flex:0 0 224px!important;width:224px!important;min-width:224px!important;height:58px!important;padding:5px 10px!important}
+  .site-header .brand-logo{width:224px!important;height:auto!important;max-width:100%;flex:0 0 224px!important}
+  .site-header>.header-tools{gap:8px!important}
+}
+@media(max-width:760px){
+  .site-header>.brand{flex:0 0 132px!important;width:132px!important;min-width:132px!important;height:46px!important;padding:4px 5px!important}
+  .site-header .brand-logo{width:132px!important;height:auto!important;max-width:100%;flex:0 0 132px!important}
+  .premium-mode .premium-hero{gap:12px!important;padding:18px 0 14px!important}
+  .premium-mode .premium-hero h2{font-size:clamp(2.1rem,8vw,3.1rem)!important;line-height:1.02!important;margin:6px 0 9px!important}
+  .premium-mode .premium-hero .muted{font-size:.94rem!important;line-height:1.42!important;margin:0!important}
+  .premium-mode .premium-hero .secondary{min-height:40px!important;padding:8px 12px!important}
+  .premium-mode .premium-toolbar{gap:7px!important;margin:12px 0!important}
+  .premium-mode .premium-toolbar span{padding:7px 9px!important;font-size:.78rem!important}
+  .premium-mode .premium-grid{gap:12px!important}
+  .premium-mode .premium-card{min-height:0!important;padding:15px!important}
+  .premium-mode .premium-card h3{font-size:1.3rem!important;line-height:1.12!important;margin:10px 0 7px!important}
+  .premium-mode .premium-card p{font-size:.92rem!important;line-height:1.45!important}
+  .premium-mode .gemini-workspace{margin-top:18px!important;padding:15px!important}
+  .premium-mode .gemini-head{gap:10px!important}
+  .premium-mode .gemini-head h3{font-size:1.45rem!important;line-height:1.12!important}
+  .premium-mode .gemini-head .muted{font-size:.9rem!important;line-height:1.4!important}
+  .premium-mode .gemini-form textarea{min-height:100px!important}
+  .premium-mode .date-search-controls{margin:14px 0 22px!important}
+}
+@media(max-width:380px){
+  .site-header>.brand{flex-basis:120px!important;width:120px!important;min-width:120px!important;height:44px!important}
+  .site-header .brand-logo{width:120px!important;flex-basis:120px!important}
+  .premium-mode .premium-card,.premium-mode .gemini-workspace{padding:13px!important}
+}
+@media(min-width:761px){
+  .premium-mode .premium-hero{gap:22px!important;padding:28px 0 22px!important}
+  .premium-mode .premium-hero h2{line-height:1.02!important}
+  .premium-mode .premium-grid{gap:20px!important}
+  .premium-mode .premium-card{min-height:0!important}
+  .premium-mode .gemini-workspace{margin-top:26px!important}
+  .premium-mode .date-search-controls{margin:18px 0 26px!important}
+}
