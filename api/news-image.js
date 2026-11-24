@@ -77,7 +77,7 @@ function makeSvg(row) {
 <rect x="38" y="38" width="684" height="26" rx="13" fill="${accent}" opacity=".9"/>
 <g filter="url(#s)">${icon(scene, accent)}</g>
 <rect x="45" y="575" width="670" height="130" rx="24" fill="#050812" opacity=".9"/>
-<text x="58" y="598" font-size="15" font-weight="700" letter-spacing="2" fill="${accent}">PUNJABI NEWS • ${esc(row.category || 'NEWS').toUpperCase()}</text>
+<text x="58" y="598" font-size="15" font-weight="700" letter-spacing="2" fill="${accent}">TOPSTORYDESK • ${esc(row.category || 'NEWS').toUpperCase()}</text>
 ${titleSvg}
 <text x="58" y="697" font-size="13" fill="#9fb0c7">${date} • Story ${esc(row.daily_rank)}</text>
 </svg>`;
