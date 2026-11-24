@@ -21,3 +21,10 @@ html[dir="rtl"] input:not([type="checkbox"]):not([type="radio"]),html[dir="rtl"]
 html[dir="rtl"] .gemini-empty,html[dir="rtl"] .gemini-text,html[dir="rtl"] .gemini-message,html[dir="rtl"] .gemini-activity-panel,html[dir="rtl"] .gemini-activity-list{ text-align:right!important;direction:rtl}
 html[dir="rtl"] .loading-card.error{direction:rtl;text-align:right!important}
 html[dir="rtl"] .footer-column{align-items:flex-start}
+
+
+/* TopStoryDesk channel promotion */
+.news-channel-promo{margin:18px 0 8px;padding:14px 16px;border:1px solid #e6d9bd;border-radius:12px;background:#fffaf0;color:#3f382d;font-size:.9rem;line-height:1.55}
+.news-channel-promo strong{display:block;font-weight:800;margin-bottom:6px}
+.news-channel-promo p{margin:0 0 9px;font-size:.88rem}
+.news-channel-promo a{display:inline-flex;color:#075e54;font-weight:800;text-decoration:underline;text-underline-offset:3px}
