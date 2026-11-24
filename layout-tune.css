@@ -1,0 +1,28 @@
+/* TopStoryDesk layout refinements - keep the news itself above archive controls */
+.news-pager:empty{display:none!important}
+.news-pager:not(:empty){margin-top:10px;margin-bottom:10px}
+.date-search-controls{margin:18px 0 26px!important}
+@media(max-width:700px){
+  main{padding-left:16px!important;padding-right:16px!important}
+  .basic-mode .hero{padding:18px 0 14px!important}
+  .basic-mode .hero>.eyebrow{margin-bottom:8px!important}
+  .basic-mode .hero h1{font-size:clamp(2.45rem,9.8vw,3.35rem)!important;line-height:.98!important}
+  .basic-mode .hero-copy{margin:11px 0 0!important;font-size:1.05rem!important;line-height:1.35!important}
+  .editorial-intro{font-size:.94rem!important;line-height:1.42!important;margin:10px 0 0!important;max-width:650px}
+  .basic-mode .news-section{padding-top:10px!important}
+  .basic-mode .section-heading{margin-bottom:8px!important}
+  .basic-mode .section-heading h2{font-size:clamp(1.8rem,7vw,2.25rem)!important;line-height:1.02!important}
+  .date-search-controls{margin:18px 0 24px!important;padding:12px!important;gap:8px!important}
+  .date-search-controls label{font-size:.74rem!important}
+  .date-search-controls input,.date-search-controls select{height:40px!important;font-size:.84rem!important}
+  .date-search-controls button{height:40px!important;min-height:40px!important;font-size:.86rem!important}
+  .news-grid{gap:12px!important}
+  .news-card,.news-card:nth-child(n){min-height:0!important;padding:16px!important}
+  .news-card h3{margin:12px 0 8px!important;font-size:1.35rem!important;line-height:1.12!important}
+  .news-card p{font-size:.92rem!important;line-height:1.5!important}
+  .news-card img,.news-card:nth-child(n) img{width:100%!important;height:auto!important;aspect-ratio:16/9;object-fit:cover;margin:0 0 12px!important;border-radius:10px}
+}
+@media(max-width:380px){
+  .basic-mode .hero h1{font-size:clamp(2.25rem,9.4vw,2.8rem)!important}
+  .date-search-controls{padding:10px!important}
+}
