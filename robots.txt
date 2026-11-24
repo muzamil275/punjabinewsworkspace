@@ -10,4 +10,4 @@ User-agent: Googlebot-News
 Allow: /
 Disallow: /api/
 
-Sitemap: https://punjabi-news-workspace.vercel.app/sitemap.xml
+Sitemap: https://topstorydesk.vercel.app/sitemap.xml
