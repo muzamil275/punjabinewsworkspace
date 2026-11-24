@@ -1,14 +1,14 @@
-# Punjabi News Workspace
+# TopStoryDesk
 
-Production Punjabi/Urdu news website with two deliberately separate reading modes: **Basic** (public) and **Premium** (verified subscribers).
+Production bilingual English/Urdu Pakistan news website with two deliberately separate reading modes: **Basic** (public) and **Premium** (verified subscribers).
 
 ## Actual production architecture
 
 - Frontend: lightweight static HTML/CSS/JavaScript at the repository root.
 - Backend: Vercel serverless functions under `api/` with shared helpers in `lib/api.js`.
 - Database/Auth/Storage: Supabase.
-- Deployment: Vercel production project `punjabi-news-workspace`.
-- The nested `Punjabi News Workspace/punjabi/` directory is a separate Next.js template and is not the production frontend.
+- Deployment: Vercel production project `topstorydesk`.
+- The nested `TopStoryDesk/punjabi/` directory is a separate Next.js template and is not the production frontend.
 - The legacy Cloudflare Worker directory is retained as historical code and is not used by the production frontend.
 
 ## Modes
