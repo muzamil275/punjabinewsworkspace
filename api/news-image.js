@@ -13,6 +13,11 @@ function sceneFor(text) {
   if (/youth card|youth empowerment|digital bank|digital banking|bank account|visa debit|scholarship|internship|job placement|نوجوان|یوتھ کارڈ/.test(t)) return 'youth';
   if (/hec|hat|usat|education|school|teacher|exam|university|student|تعلیم|اساتذہ|امتحان|یونیورسٹی/.test(t)) return 'education';
   if (/missile|fatah-?3|cruise missile|supersonic/.test(t)) return 'security';
+  if (/climate observatory|climate|smog|air quality|environment|موسمیاتی|سموگ/.test(t)) return 'weather';
+  if (/court|supreme court|judiciary|inheritance|legal|عدالت|سپریم کورٹ|قانونی/.test(t)) return 'civic';
+  if (/microsoft|outlook|teams outage|global outage|software outage/.test(t)) return 'technology';
+  if (/water supply|water and sanitation|sanitation|hydropower|dam|cricket stadium|development project|infrastructure|پانی|صفائی|ڈیم/.test(t)) return 'infrastructure';
+  if (/road accident|van plunges|vehicle crash|passenger van|traffic accident/.test(t)) return 'infrastructure';
   if (/inflation|sbp|monetary policy|interest rate|small business|sme|business facilitation|entrepreneur/.test(t)) return 'finance';
   if (/e-passport|passport|پاسپورٹ/.test(t)) return 'passport';
   if (/imf|budget|economy|remittance|psx|stock|finance|profit|forecast|dollar|billion|rs\b/.test(t)) return 'finance';
