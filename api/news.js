@@ -23,7 +23,7 @@ const LIVE_IMAGES = {
 };
 
 const NEWS_RATE_WINDOW_MS = 60 * 1000;
-const NEWS_RATE_LIMIT = 60;
+const NEWS_RATE_LIMIT = 300;
 const newsRate = global.__pnwNewsRate || (global.__pnwNewsRate = new Map());
 function newsClientIp(req) { const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim(); return forwarded || String(req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown'); }
 
